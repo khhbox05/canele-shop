@@ -73,4 +73,253 @@
 
                 <div class="pt-2">
                     <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">選擇包裝方式 *</label>
-                    <select id="packSelect" class="w-full p-4 border border-stone-300 rounded-xl bg-stone-50 focus:outline
+                    <select id="packSelect" class="w-full p-4 border border-stone-300 rounded-xl bg-stone-50 focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] text-base font-medium cursor-pointer h-14" onchange="calculateTotal()" required>
+                        <option value="">載入中...</option>
+                    </select>
+                </div>
+
+                <div class="space-y-6 pt-4">
+                    <h3 class="text-lg font-extrabold text-[#5B7290] tracking-widest border-b-2 border-stone-100 pb-3.5 mb-6 uppercase">Step 03. 填寫訂購資訊</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">訂購人姓名 *</label>
+                            <input type="text" id="custName" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] h-14" placeholder="請輸入姓名" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">聯絡電話 *</label>
+                            <input type="tel" id="custPhone" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] h-14" placeholder="請輸入手機號碼" required>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">取貨/寄送日期 *</label>
+                            <select id="shipDate" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] bg-white font-bold text-stone-800 cursor-pointer h-14" required>
+                                </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">配送方式 *</label>
+                            <select id="shipMethod" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] cursor-pointer h-14" onchange="toggleAddress()" required>
+                                <option value="store">門市自取 (免運費)</option>
+                                <option value="delivery">黑貓宅配 (運費另計)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="addressGroup" class="hidden transition-all duration-300">
+                        <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">宅配收件地址 *</label>
+                        <input type="text" id="custAddress" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] h-14" placeholder="請填寫完整收件地址">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">備註說明</label>
+                        <textarea id="orderNote" rows="3" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290]" placeholder="若有特殊需求請在此註記"></textarea>
+                    </div>
+                </div>
+
+                <div class="bg-stone-50 p-6 rounded-xl space-y-2 text-right text-stone-600 text-sm tracking-wide border border-stone-100">
+                    <div>商品與包裝小計 Item Subtotal: <span id="subtotalDisplay" class="font-bold text-base text-stone-800">$0</span></div>
+                    <div id="shipFeeDisplay" class="hidden">宅配運費 Shipping: <span class="font-bold text-base text-stone-800">+$160</span></div>
+                    <div class="text-[#222222] font-black text-2xl pt-3 border-t border-stone-200 mt-3">
+                        總金額 Total：<span id="totalDisplay" class="text-2xl font-black text-[#5B7290]">$0</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-[#5B7290] text-white font-extrabold tracking-widest p-4.5 rounded-xl hover:bg-[#3E4F66] transition-colors duration-200 shadow-md cursor-pointer text-base uppercase">
+                    送出預購訂單 Submit Order
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        function toggleAddress() {
+            const method = document.getElementById('shipMethod').value;
+            const addrGroup = document.getElementById('addressGroup');
+            const addrInput = document.getElementById('custAddress');
+            const shipFeeDisplay = document.getElementById('shipFeeDisplay');
+            
+            if(method === 'delivery') {
+                addrGroup.classList.remove('hidden');
+                addrInput.required = true;
+                shipFeeDisplay.classList.remove('hidden');
+                shipFeeDisplay.querySelector('span').innerText = `+$${shippingFee}`;
+            } else {
+                addrGroup.classList.add('hidden');
+                addrInput.required = false;
+                addrInput.value = "";
+                shipFeeDisplay.classList.add('hidden');
+            }
+            calculateTotal();
+        }
+
+        function generateCustomDates(startAfter, totalDays) {
+            const dateSelect = document.getElementById('shipDate');
+            let optionsHtml = `<option value="" disabled selected>-- 請選擇取貨/寄送日期 --</option>`;
+            
+            const start = startAfter !== undefined ? parseInt(startAfter) : 1;
+            const range = totalDays !== undefined ? parseInt(totalDays) : 14;
+
+            for (let i = start; i < (start + range); i++) {
+                let d = new Date();
+                d.setDate(d.getDate() + i);
+                let yyyy = d.getFullYear();
+                let mm = String(d.getMonth() + 1).padStart(2, '0');
+                let dd = String(d.getDate()).padStart(2, '0');
+                const weekday = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
+                const dateStr = `${yyyy}-${mm}-${dd}`;
+                optionsHtml += `<option value="${dateStr}">${dateStr} (星期${weekday})</option>`;
+            }
+            dateSelect.innerHTML = optionsHtml;
+        }
+
+        async function fetchOptions() {
+            try {
+                const res = await fetch(`${API_URL}?action=getFormOptions`);
+                const data = await res.json();
+                localProducts = data.products;
+                localPackaging = data.packaging;
+                
+                let startAfter = 1;
+                let totalDays = 14;
+
+                if(data.settings) {
+                    document.getElementById('txtShopName').innerText = data.settings.shop_name || "Lilou";
+                    document.getElementById('txtMainTitle').innerText = data.settings.main_title || "Lilou 可麗露預購";
+                    document.getElementById('txtSubTitle').innerText = data.settings.sub_title || "挑選喜愛的口味放入購物車";
+                    document.title = data.settings.main_title || "Lilou 可麗露預購";
+                    
+                    if(data.settings.start_after_days !== undefined) startAfter = data.settings.start_after_days;
+                    if(data.settings.total_days_range !== undefined) totalDays = data.settings.total_days_range;
+                }
+
+                // 渲染口味清單：全面放大字體與按鈕尺寸
+                const pMenu = document.getElementById('productMenu');
+                if(localProducts.length === 0) {
+                    pMenu.innerHTML = `<p class="text-stone-400 text-center py-6 text-base">目前沒有開放預購的口味喔！</p>`;
+                } else {
+                    pMenu.innerHTML = localProducts.map((p, idx) => {
+                        const isOut = p.stock <= 0;
+                        return `
+                        <div class="flex items-center justify-between py-4 border-b border-stone-100 last:border-0 gap-4">
+                            <div>
+                                <span class="font-extrabold text-stone-900 text-lg tracking-wide">${p.name}</span>
+                                <span class="ml-3 text-[#5B7290] font-bold text-lg">$${p.price}</span>
+                                <p class="text-sm mt-1 ${isOut ? 'text-red-500 font-bold' : 'text-stone-400 font-medium'}">剩餘數量：${p.stock} 顆 ${isOut ? '(已售罄)' : ''}</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <input type="number" id="qty_${idx}" min="1" max="${p.stock}" value="1" ${isOut ? 'disabled' : ''} class="w-16 p-2 border-2 border-stone-200 rounded-xl text-center text-base font-bold bg-stone-50 focus:outline-none focus:border-[#5B7290] h-11">
+                                <button type="button" onclick="addToCart(${idx})" ${isOut ? 'disabled' : ''} class="bg-[#5B7290] text-white text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-[#3E4F66] disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed cursor-pointer transition-colors h-11 flex items-center">加購物車</button>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+
+                // 渲染包裝選單
+                const packSelect = document.getElementById('packSelect');
+                packSelect.innerHTML = `<option value="" disabled selected>-- 請選擇包裝方式 --</option>` + localPackaging.map(p => 
+                    `<option value="${p.name}" data-extra="${p.extra_price}">${p.name} (+$${p.extra_price})</option>`
+                ).join('');
+
+                generateCustomDates(startAfter, totalDays);
+                renderCart();
+            } catch (err) {
+                alert("數據載入失敗，請確認 Apps Script 網址是否正確。");
+            }
+        }
+
+        function addToCart(idx) {
+            const product = localProducts[idx];
+            const inputQty = parseInt(document.getElementById(`qty_${idx}`).value) || 1;
+            if(inputQty > product.stock) { alert(`超過庫存上限！`); return; }
+            
+            const existingItem = cart.find(item => item.name === product.name);
+            if(existingItem) {
+                if((existingItem.quantity + inputQty) > product.stock) { alert(`累計數量將會超過庫存上限`); return; }
+                existingItem.quantity += inputQty;
+            } else {
+                cart.push({ name: product.name, price: product.price, quantity: inputQty });
+            }
+            alert(`已將「${product.name}」x ${inputQty} 加入購物車`);
+            renderCart();
+        }
+
+        function removeFromCart(cartIdx) { cart.splice(cartIdx, 1); renderCart(); }
+
+        function renderCart() {
+            const cBody = document.getElementById('cartTableBody');
+            if(cart.length === 0) {
+                cBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-stone-400 text-base">購物車目前空空如也，請從上方加入商品</td></tr>`;
+                calculateTotal(); return;
+            }
+            cBody.innerHTML = cart.map((item, i) => `
+                <tr class="text-stone-700">
+                    <td class="py-4 font-bold text-base text-stone-900">${item.name}</td>
+                    <td class="py-4 text-sm font-medium">$${item.price}</td>
+                    <td class="py-4 text-base font-semibold text-center">${item.quantity} 顆</td>
+                    <td class="py-4 font-bold text-base text-stone-900">$${item.price * item.quantity}</td>
+                    <td class="py-4 text-center"><button type="button" onclick="removeFromCart(${i})" class="text-stone-400 hover:text-red-500 font-black text-lg transition-colors cursor-pointer px-2">✕</button></td>
+                </tr>
+            `).join('');
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let itemSubtotal = 0;
+            cart.forEach(item => { itemSubtotal += item.price * item.quantity; });
+            const packSelect = document.getElementById('packSelect');
+            let packPrice = 0;
+            if(packSelect && packSelect.selectedOptions[0] && packSelect.value !== "") {
+                packPrice = parseInt(packSelect.selectedOptions[0].getAttribute('data-extra')) || 0;
+            }
+            let subtotal = itemSubtotal + packPrice;
+            document.getElementById('subtotalDisplay').innerText = `$${subtotal}`;
+            const shipMethod = document.getElementById('shipMethod').value;
+            let finalTotal = subtotal;
+            if(shipMethod === 'delivery') finalTotal += shippingFee;
+            document.getElementById('totalDisplay').innerText = `$${finalTotal}`;
+            return finalTotal;
+        }
+
+        async function handleOrderSubmit(e) {
+            e.preventDefault();
+            if(cart.length === 0) { alert("購物車內尚無任何商品！"); return; }
+            const packSelect = document.getElementById('packSelect');
+            if(packSelect.value === "") { alert("請選擇包裝方式！"); return; }
+
+            const prodSummary = cart.map(item => `${item.name}(${item.quantity}顆)`).join('、');
+            const totalQty = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+            const orderData = {
+                action: "submitOrder",
+                name: document.getElementById('custName').value,
+                phone: document.getElementById('custPhone').value,
+                date: document.getElementById('shipDate').value,
+                shipping_method: document.getElementById('shipMethod').value === 'store' ? "門市自取" : "黑貓宅配",
+                address: document.getElementById('custAddress').value,
+                product_name: prodSummary,
+                quantity: totalQty,
+                packaging_name: packSelect.value,
+                total_price: calculateTotal(),
+                note: document.getElementById('orderNote').value
+            };
+
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(orderData) });
+                const result = await res.json();
+                if(result.status === "success") {
+                    alert("🎉 預購單送出成功！已為您保留數量。");
+                    cart = [];
+                    document.getElementById('orderForm').reset();
+                    document.getElementById('addressGroup').classList.add('hidden');
+                    document.getElementById('shipFeeDisplay').classList.add('hidden');
+                    fetchOptions();
+                }
+            } catch(err) { alert("送出訂單時發生錯誤，請稍後再試。"); }
+        }
+
+        fetchOptions();
+    </script>
+</body>
+</html>
