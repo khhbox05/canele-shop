@@ -94,7 +94,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">取貨/寄送日期 *</label>
+                            <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2 text-[#5B7290]">取貨/寄送日期 * (依試算表設定)</label>
                             <select id="shipDate" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] bg-white font-bold text-stone-800 cursor-pointer h-14" required>
                                 </select>
                         </div>
@@ -154,22 +154,32 @@
             calculateTotal();
         }
 
-        function generateCustomDates(startAfter, totalDays) {
+        // 💡 讀取試算表中的字串，並幫日期自動配對星期幾，轉化為下拉選單
+        function parseAndRenderCustomDates(dateString) {
             const dateSelect = document.getElementById('shipDate');
             let optionsHtml = `<option value="" disabled selected>-- 請選擇取貨/寄送日期 --</option>`;
             
-            const start = startAfter !== undefined ? parseInt(startAfter) : 1;
-            const range = totalDays !== undefined ? parseInt(totalDays) : 14;
-
-            for (let i = start; i < (start + range); i++) {
-                let d = new Date();
-                d.setDate(d.getDate() + i);
-                let yyyy = d.getFullYear();
-                let mm = String(d.getMonth() + 1).padStart(2, '0');
-                let dd = String(d.getDate()).padStart(2, '0');
-                const weekday = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
-                const dateStr = `${yyyy}-${mm}-${dd}`;
-                optionsHtml += `<option value="${dateStr}">${dateStr} (星期${weekday})</option>`;
+            if(dateString && dateString.trim() !== "") {
+                // 將逗號隔開的日期轉成陣列
+                const dateArr = dateString.split(',');
+                
+                dateArr.forEach(dStr => {
+                    const cleanDate = dStr.trim();
+                    if(cleanDate !== "") {
+                        // 建立日期物件來取得星期幾
+                        const parts = cleanDate.split('-');
+                        if(parts.length === 3) {
+                            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+                            const weekday = ["日", "一", "二", "三", "四", "五", "六"][dateObj.getDay()];
+                            optionsHtml += `<option value="${cleanDate}">${cleanDate} (星期${weekday})</option>`;
+                        } else {
+                            // 防呆：如果格式不完全符合 YYYY-MM-DD，依然原字呈現
+                            optionsHtml += `<option value="${cleanDate}">${cleanDate}</option>`;
+                        }
+                    }
+                });
+            } else {
+                optionsHtml = `<option value="" disabled>目前無開放日期，請聯繫店家</option>`;
             }
             dateSelect.innerHTML = optionsHtml;
         }
@@ -181,8 +191,7 @@
                 localProducts = data.products;
                 localPackaging = data.packaging;
                 
-                let startAfter = 1;
-                let totalDays = 14;
+                let rawDateSetting = "";
 
                 if(data.settings) {
                     document.getElementById('txtShopName').innerText = data.settings.shop_name || "Lilou";
@@ -190,11 +199,11 @@
                     document.getElementById('txtSubTitle').innerText = data.settings.sub_title || "挑選喜愛的口味放入購物車";
                     document.title = data.settings.main_title || "Lilou 可麗露預購";
                     
-                    if(data.settings.start_after_days !== undefined) startAfter = data.settings.start_after_days;
-                    if(data.settings.total_days_range !== undefined) totalDays = data.settings.total_days_range;
+                    // 💡 抓取試算表設定的日期字串
+                    rawDateSetting = data.settings.available_dates || "";
                 }
 
-                // 💡 重新定義 RWD 結構，完美解決手機版品名太長被擠壓的問題
+                // 渲染口味清單
                 const pMenu = document.getElementById('productMenu');
                 if(localProducts.length === 0) {
                     pMenu.innerHTML = `<p class="text-stone-400 text-center py-6 text-base">目前沒有開放預購的口味喔！</p>`;
@@ -209,7 +218,6 @@
                                     <span class="text-[#5B7290] font-black text-lg">$${p.price}</span>
                                 </div>
                             </div>
-                            
                             <div class="flex items-center justify-between md:justify-end gap-4 bg-stone-50 md:bg-transparent p-2.5 md:p-0 rounded-xl">
                                 <p class="text-sm ${isOut ? 'text-red-500 font-bold' : 'text-stone-500 font-medium'}">
                                     庫存：${p.stock} 顆 ${isOut ? '(售罄)' : ''}
@@ -229,7 +237,9 @@
                     `<option value="${p.name}" data-extra="${p.extra_price}">${p.name} (+$${p.extra_price})</option>`
                 ).join('');
 
-                generateCustomDates(startAfter, totalDays);
+                // 💡 呼叫手動設定日期的渲染函式
+                parseAndRenderCustomDates(rawDateSetting);
+                
                 renderCart();
             } catch (err) {
                 alert("數據載入失敗，請確認 Apps Script 網址是否正確。");
