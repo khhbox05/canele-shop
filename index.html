@@ -7,10 +7,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         :root {
-            --brand-color: #5B7290;       /* 灰藍主色 */
-            --brand-dark: #3E4F66;        /* 灰藍深色 */
-            --brand-bg: #F4F6F9;          /* 灰藍基底背景 */
-            --brand-text-dark: #222222;   /* 深色黑體字 */
+            --brand-color: #5B7290;       
+            --brand-dark: #3E4F66;        
+            --brand-bg: #F4F6F9;          
+            --brand-text-dark: #222222;   
         }
     </style>
 </head>
@@ -40,9 +40,9 @@
                 <p id="txtSubTitle" class="text-stone-600 text-base md:text-lg tracking-wide max-w-xl mx-auto leading-relaxed">網頁簡介載入中...</p>
             </div>
 
-            <div class="bg-white p-6 md:p-10 rounded-2xl shadow-xs border border-stone-100">
+            <div class="bg-white p-5 md:p-10 rounded-2xl shadow-xs border border-stone-100">
                 <h3 class="text-lg font-extrabold text-[#5B7290] tracking-widest border-b-2 border-stone-100 pb-3.5 mb-6 uppercase">Step 01. 挑選預購口味</h3>
-                <div id="productMenu" class="space-y-5">
+                <div id="productMenu" class="space-y-2">
                     <p class="text-stone-400 text-center py-6 text-base">商品加載中...</p>
                 </div>
             </div>
@@ -194,7 +194,7 @@
                     if(data.settings.total_days_range !== undefined) totalDays = data.settings.total_days_range;
                 }
 
-                // 渲染口味清單：全面放大字體與按鈕尺寸
+                // 💡 重新定義 RWD 結構，完美解決手機版品名太長被擠壓的問題
                 const pMenu = document.getElementById('productMenu');
                 if(localProducts.length === 0) {
                     pMenu.innerHTML = `<p class="text-stone-400 text-center py-6 text-base">目前沒有開放預購的口味喔！</p>`;
@@ -202,15 +202,22 @@
                     pMenu.innerHTML = localProducts.map((p, idx) => {
                         const isOut = p.stock <= 0;
                         return `
-                        <div class="flex items-center justify-between py-4 border-b border-stone-100 last:border-0 gap-4">
-                            <div>
-                                <span class="font-extrabold text-stone-900 text-lg tracking-wide">${p.name}</span>
-                                <span class="ml-3 text-[#5B7290] font-bold text-lg">$${p.price}</span>
-                                <p class="text-sm mt-1 ${isOut ? 'text-red-500 font-bold' : 'text-stone-400 font-medium'}">剩餘數量：${p.stock} 顆 ${isOut ? '(已售罄)' : ''}</p>
+                        <div class="flex flex-col md:flex-row md:items-center justify-between py-4 border-b border-stone-100 last:border-0 gap-3">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-baseline flex-wrap gap-2">
+                                    <span class="font-extrabold text-stone-900 text-lg tracking-wide break-words">${p.name}</span>
+                                    <span class="text-[#5B7290] font-black text-lg">$${p.price}</span>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-3">
-                                <input type="number" id="qty_${idx}" min="1" max="${p.stock}" value="1" ${isOut ? 'disabled' : ''} class="w-16 p-2 border-2 border-stone-200 rounded-xl text-center text-base font-bold bg-stone-50 focus:outline-none focus:border-[#5B7290] h-11">
-                                <button type="button" onclick="addToCart(${idx})" ${isOut ? 'disabled' : ''} class="bg-[#5B7290] text-white text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-[#3E4F66] disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed cursor-pointer transition-colors h-11 flex items-center">加購物車</button>
+                            
+                            <div class="flex items-center justify-between md:justify-end gap-4 bg-stone-50 md:bg-transparent p-2.5 md:p-0 rounded-xl">
+                                <p class="text-sm ${isOut ? 'text-red-500 font-bold' : 'text-stone-500 font-medium'}">
+                                    庫存：${p.stock} 顆 ${isOut ? '(售罄)' : ''}
+                                </p>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" id="qty_${idx}" min="1" max="${p.stock}" value="1" ${isOut ? 'disabled' : ''} class="w-14 p-2 border-2 border-stone-200 rounded-xl text-center text-base font-bold bg-white focus:outline-none focus:border-[#5B7290] h-11">
+                                    <button type="button" onclick="addToCart(${idx})" ${isOut ? 'disabled' : ''} class="bg-[#5B7290] text-white text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-[#3E4F66] disabled:bg-stone-200 disabled:text-stone-400 disabled:cursor-not-allowed cursor-pointer transition-colors h-11 flex items-center shrink-0">加購物車</button>
+                                </div>
                             </div>
                         </div>`;
                     }).join('');
@@ -255,7 +262,7 @@
             }
             cBody.innerHTML = cart.map((item, i) => `
                 <tr class="text-stone-700">
-                    <td class="py-4 font-bold text-base text-stone-900">${item.name}</td>
+                    <td class="py-4 font-bold text-base text-stone-900 pr-2 break-words">${item.name}</td>
                     <td class="py-4 text-sm font-medium">$${item.price}</td>
                     <td class="py-4 text-base font-semibold text-center">${item.quantity} 顆</td>
                     <td class="py-4 font-bold text-base text-stone-900">$${item.price * item.quantity}</td>
