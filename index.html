@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每週限量可麗露預購</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-amber-50/50 text-stone-800 min-h-screen">
+
+    <script>
+        // ⚠️ 這裡請填入你在 Google Apps Script 部署得到的網頁應用程式網址
+        const API_URL = "https://script.google.com/macros/s/AKfycbxt7wE8XvyC7Tui3UkcSUDnbZR0WltsMJbeYS5HftlSZ02KFLAUdtMGvuPynTekn_Coiw/exec";
+        let shippingFee = 160; // 預設宅配運費，可在畫面即時改
+    </script>
+
+    <nav class="bg-amber-800 text-amber-50 p-4 shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-wider">🤎 可麗露工作室</h1>
+            <div class="space-x-4">
+                <button onclick="switchTab('front')" class="hover:underline cursor-pointer">前台下單</button>
+                <button onclick="switchTab('back')" class="hover:underline cursor-pointer">後台管理</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-3xl mx-auto p-4 md:py-8">
+        
+        <section id="front-tab" class="space-y-6">
+            <div class="text-center py-6">
+                <h2 class="text-3xl font-extrabold text-amber-900 mb-2">本週限量可麗露預購</h2>
+                <p class="text-stone-600">每週口味限量供應，手速要快！</p>
+            </div>
+
+            <form id="orderForm" class="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 space-y-4" onsubmit="handleOrderSubmit(event)">
+                <h3 class="text-lg font-bold text-amber-950 border-b pb-2">1. 選擇商品與包裝</h3>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1">選擇口味 (剩餘庫存)</label>
+                    <select id="prodSelect" class="w-full p-2.5 border border-stone-200 rounded-lg bg-stone-50" onchange="calculateTotal()" required>
+                        <option value="">載入中...</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">數量</label>
+                        <input type="number" id="orderQty" min="1" value="1" class="w-full p-2.5 border border-stone-200 rounded-lg bg-stone-50" onchange="calculateTotal()" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">包裝方式</label>
+                        <select id="packSelect" class="w-full p-2.5 border border-stone-200 rounded-lg bg-stone-50" onchange="calculateTotal()" required>
+                            <option value="">載入中...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-bold text-amber-950 border-b pb-2 pt-4">2. 訂購人資訊</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">訂購者姓名 *</label>
+                        <input type="text" id="custName" class="w-full p-2.5 border border-stone-200 rounded-lg" placeholder="姓名" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">聯絡電話 *</label>
+                        <input type="tel" id="custPhone" class="w-full p-2.5 border border-stone-200 rounded-lg" placeholder="手機號碼" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">取貨/寄送日期 *</label>
+                        <input type="date" id="shipDate" class="w-full p-2.5 border border-stone-200 rounded-lg" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">取貨方式 *</label>
+                        <select id="shipMethod" class="w-full p-2.5 border border-stone-200 rounded-lg" onchange="toggleAddress()" required>
+                            <option value="store">門市自取 (免運費)</option>
+                            <option value="delivery">黑貓宅配 (運費改算)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="addressGroup" class="hidden">
+                    <label class="block text-sm font-medium mb-1 text-amber-900">收件地址 *</label>
+                    <input type="text" id="custAddress" class="w-full p-2.5 border border-amber-200 rounded-lg bg-amber-50/30" placeholder="請填寫完整宅配地址">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">備註說明</label>
+                    <textarea id="orderNote" rows="2" class="w-full p-2.5 border border-stone-200 rounded-lg" placeholder="有什麼想告訴我們的嗎？"></textarea>
+                </div>
+
+                <div class="bg-amber-100/60 p-4 rounded-xl flex justify-between items-center text-amber-950 font-bold text-xl">
+                    <span>總金額：</span>
+                    <span id="totalDisplay">$0</span>
+                </div>
+
+                <button type="submit" class="w-full bg-amber-700 text-white font-bold p-3 rounded-xl hover:bg-amber-800 transition shadow cursor-pointer">確認送出預購單</button>
+            </form>
+        </section>
+
+        <section id="back-tab" class="hidden space-y-6">
+            <div class="text-center py-6">
+                <h2 class="text-2xl font-bold text-stone-800 mb-2">後台品項與參數設定</h2>
+                <p class="text-sm text-stone-500">修改後請點擊最下方「儲存設定到雲端」才會生效</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 space-y-6">
+                <div>
+                    <h3 class="text-base font-bold mb-2 text-stone-700">🚚 宅配運費設定</h3>
+                    <input type="number" id="inputShipping" value="160" class="p-2 border rounded-lg w-32" onchange="shippingFee = parseInt(this.value); calculateTotal();"> 元
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-base font-bold text-stone-700">🧁 本週商品口味與數量管理</h3>
+                        <button type="button" onclick="addProdRow()" class="text-sm bg-stone-100 border text-stone-700 px-3 py-1 rounded hover:bg-stone-200 cursor-pointer">+ 新增口味</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="bg-stone-50 text-stone-500">
+                                    <th class="p-2">商品口味名稱</th>
+                                    <th class="p-2 w-24">單價</th>
+                                    <th class="p-2 w-24">本週限額</th>
+                                    <th class="p-2 w-16">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="prodTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-base font-bold text-stone-700">🎁 包裝方式管理</h3>
+                        <button type="button" onclick="addPackRow()" class="text-sm bg-stone-100 border text-stone-700 px-3 py-1 rounded hover:bg-stone-200 cursor-pointer">+ 新增包裝</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="bg-stone-50 text-stone-500">
+                                    <th class="p-2">包裝名稱</th>
+                                    <th class="p-2 w-32">加價金額</th>
+                                    <th class="p-2 w-16">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="packTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <button onclick="saveSettingsToServer()" class="w-full bg-emerald-600 text-white font-bold p-3 rounded-xl hover:bg-emerald-700 transition shadow cursor-pointer">💾 儲存設定到雲端（同步至試算表）</button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        let localProducts = [];
+        let localPackaging = [];
+
+        // 切換前後台頁籤
+        function switchTab(tab) {
+            if(tab === 'front') {
+                document.getElementById('front-tab').classList.remove('hidden');
+                document.getElementById('back-tab').classList.add('hidden');
+                fetchOptions(); // 回到前台時重新載入最新庫存與品項
+            } else {
+                document.getElementById('front-tab').classList.add('hidden');
+                document.getElementById('back-tab').classList.remove('hidden');
+                renderAdminTables();
+            }
+        }
+
+        // 當宅配被勾選時才顯示地址
+        function toggleAddress() {
+            const method = document.getElementById('shipMethod').value;
+            const addrGroup = document.getElementById('addressGroup');
+            const addrInput = document.getElementById('custAddress');
+            if(method === 'delivery') {
+                addrGroup.classList.remove('hidden');
+                addrInput.required = true;
+            } else {
+                addrGroup.classList.add('hidden');
+                addrInput.required = false;
+                addrInput.value = "";
+            }
+            calculateTotal();
+        }
+
+        // 從資料庫(Sheets)拿品項資料
+        async function fetchOptions() {
+            try {
+                const res = await fetch(`${API_URL}?action=getFormOptions`);
+                const data = await res.json();
+                localProducts = data.products;
+                localPackaging = data.packaging;
+                
+                // 渲染前台下拉選單
+                const pSelect = document.getElementById('prodSelect');
+                pSelect.innerHTML = localProducts.map(p => 
+                    `<option value="${p.name}" data-price="${p.price}" data-stock="${p.stock}" ${p.stock <= 0 ? 'disabled' : ''}>
+                        ${p.name} - $${p.price} (剩 ${p.stock} 顆) ${p.stock <= 0 ? '[已售罄]' : ''}
+                    </option>`
+                ).join('');
+
+                const packSelect = document.getElementById('packSelect');
+                packSelect.innerHTML = localPackaging.map(p => 
+                    `<option value="${p.name}" data-extra="${p.extra_price}">${p.name} (+$${p.extra_price})</option>`
+                ).join('');
+
+                calculateTotal();
+            } catch (err) {
+                alert("無法載入選單，請確認 API URL 是否正確填寫。");
+            }
+        }
+
+        // 即時試算金額
+        function calculateTotal() {
+            const pSelect = document.getElementById('prodSelect');
+            const packSelect = document.getElementById('packSelect');
+            const qty = parseInt(document.getElementById('orderQty').value) || 1;
+            const shipMethod = document.getElementById('shipMethod').value;
+
+            if(!pSelect.selectedOptions[0] || !packSelect.selectedOptions[0]) return;
+
+            const pPrice = parseInt(pSelect.selectedOptions[0].getAttribute('data-price')) || 0;
+            const pExtra = parseInt(packSelect.selectedOptions[0].getAttribute('data-extra')) || 0;
+            
+            let total = (pPrice + pExtra) * qty;
+            if(shipMethod === 'delivery') {
+                total += shippingFee;
+            }
+
+            document.getElementById('totalDisplay').innerText = `$${total}`;
+            return total;
+        }
+
+        // 客戶送出訂單
+        async function handleOrderSubmit(e) {
+            e.preventDefault();
+            const pSelect = document.getElementById('prodSelect');
+            const packSelect = document.getElementById('packSelect');
+            const qty = parseInt(document.getElementById('orderQty').value);
+            const stock = parseInt(pSelect.selectedOptions[0].getAttribute('data-stock'));
+
+            if(qty > stock) {
+                alert(`非常抱歉！庫存不足，目前僅剩 ${stock} 顆。`);
+                return;
+            }
+
+            const orderData = {
+                action: "submitOrder",
+                name: document.getElementById('custName').value,
+                phone: document.getElementById('custPhone').value,
+                date: document.getElementById('shipDate').value,
+                shipping_method: document.getElementById('shipMethod').value === 'store' ? "門市自取" : "黑貓宅配",
+                address: document.getElementById('custAddress').value,
+                product_name: pSelect.value,
+                quantity: qty,
+                packaging_name: packSelect.value,
+                total_price: calculateTotal(),
+                note: document.getElementById('orderNote').value
+            };
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(orderData)
+                });
+                const result = await res.json();
+                if(result.status === "success") {
+                    alert("🎉 預購單送出成功！已為您保留數量。");
+                    document.getElementById('orderForm').reset();
+                    fetchOptions();
+                } else {
+                    alert("失敗: " + result.message);
+                }
+            } catch(err) {
+                alert("送出訂單時發生錯誤，請稍後再試。");
+            }
+        }
+
+        // --- 後台管理邏輯 ---
+        function renderAdminTables() {
+            const pBody = document.getElementById('prodTableBody');
+            pBody.innerHTML = localProducts.map((p, i) => `
+                <tr>
+                    <td class="p-1"><input type="text" value="${p.name}" class="p-1 border w-full prod-name"></td>
+                    <td class="p-1"><input type="number" value="${p.price}" class="p-1 border w-full prod-price"></td>
+                    <td class="p-1"><input type="number" value="${p.stock}" class="p-1 border w-full prod-stock"></td>
+                    <td class="p-1 text-center"><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 font-bold cursor-pointer">X</button></td>
+                </tr>
+            `).join('');
+
+            const packBody = document.getElementById('packTableBody');
+            packBody.innerHTML = localPackaging.map((p, i) => `
+                <tr>
+                    <td class="p-1"><input type="text" value="${p.name}" class="p-1 border w-full pack-name"></td>
+                    <td class="p-1"><input type="number" value="${p.extra_price}" class="p-1 border w-full pack-extra"></td>
+                    <td class="p-1 text-center"><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 font-bold cursor-pointer">X</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function addProdRow() {
+            const pBody = document.getElementById('prodTableBody');
+            pBody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td class="p-1"><input type="text" placeholder="新口味" class="p-1 border w-full prod-name"></td>
+                    <td class="p-1"><input type="number" placeholder="100" class="p-1 border w-full prod-price"></td>
+                    <td class="p-1"><input type="number" placeholder="50" class="p-1 border w-full prod-stock"></td>
+                    <td class="p-1 text-center"><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 font-bold cursor-pointer">X</button></td>
+                </tr>
+            `);
+        }
+
+        function addPackRow() {
+            const packBody = document.getElementById('packTableBody');
+            packBody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td class="p-1"><input type="text" placeholder="新包裝" class="p-1 border w-full pack-name"></td>
+                    <td class="p-1"><input type="number" placeholder="0" class="p-1 border w-full pack-extra"></td>
+                    <td class="p-1 text-center"><button onclick="this.parentElement.parentElement.remove()" class="text-red-500 font-bold cursor-pointer">X</button></td>
+                </tr>
+            `);
+        }
+
+        async function saveSettingsToServer() {
+            const prodNames = document.querySelectorAll('.prod-name');
+            const prodPrices = document.querySelectorAll('.prod-price');
+            const prodStocks = document.querySelectorAll('.prod-stock');
+            
+            let newProds = [];
+            prodNames.forEach((el, i) => {
+                if(el.value.trim() !== "") {
+                    newProds.push({
+                        name: el.value,
+                        price: parseInt(prodPrices[i].value) || 0,
+                        stock: parseInt(prodStocks[i].value) || 0
+                    });
+                }
+            });
+
+            const packNames = document.querySelectorAll('.pack-name');
+            const packExtras = document.querySelectorAll('.pack-extra');
+            
+            let newPacks = [];
+            packNames.forEach((el, i) => {
+                if(el.value.trim() !== "") {
+                    newPacks.push({
+                        name: el.value,
+                        extra_price: parseInt(packExtras[i].value) || 0
+                    });
+                }
+            });
+
+            const updateData = {
+                action: "updateSettings",
+                products: newProds,
+                packaging: newPacks
+            };
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(updateData)
+                });
+                const result = await res.json();
+                if(result.status === "success") {
+                    alert("雲端同步成功！前台已即時全面更新。");
+                    localProducts = newProds;
+                    localPackaging = newPacks;
+                }
+            } catch(err) {
+                alert("儲存至雲端時失敗，請檢查網路或 API。");
+            }
+        }
+
+        // 網頁開啟時自動載入
+        fetchOptions();
+    </script>
+</body>
+</html>
