@@ -20,7 +20,7 @@
         // ⚠️ 這裡請填入你在 Google Apps Script 部署得到的網頁應用程式網址
         const API_URL = "https://script.google.com/macros/s/AKfycbwbbwSO3VsgZdMZZ9NeVrp6T7Zkqla6GAq5Ge9LsKkcCoo_T1LnjO0wLS1XCBOAgOO_pQ/exec";
         let shippingFee = 160; 
-        let cart = []; 
+        let cart = []; // 儲存多個打包好的禮盒
         let localProducts = [];
         let localPackaging = [];
     </script>
@@ -40,43 +40,356 @@
                 <p id="txtSubTitle" class="text-stone-600 text-base md:text-lg tracking-wide max-w-xl mx-auto leading-relaxed">網頁簡介載入中...</p>
             </div>
 
-            <div class="bg-white p-5 md:p-10 rounded-2xl shadow-xs border border-stone-100">
-                <h3 class="text-lg font-extrabold text-[#5B7290] tracking-widest border-b-2 border-stone-100 pb-3.5 mb-6 uppercase">Step 01. 挑選預購品項（含口味與禮盒）</h3>
-                <div id="productMenu" class="space-y-2">
-                    <p class="text-stone-400 text-center py-6 text-base">商品加載中...</p>
+            <div class="bg-white p-5 md:p-10 rounded-2xl shadow-xs border border-stone-100 space-y-6">
+                <h3 class="text-lg font-extrabold text-[#5B7290] tracking-widest border-b-2 border-stone-100 pb-3.5 mb-2 uppercase">Step 01. 客製化您的禮盒組合</h3>
+                
+                <div>
+                    <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">1. 請先挑選這盒要使用的包裝盒型 *</label>
+                    <select id="boxSelect" class="w-full p-4 border border-stone-300 rounded-xl bg-stone-50 focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] text-base font-bold cursor-pointer h-14" onchange="handleBoxChange()">
+                        <option value="">載入中...</option>
+                    </select>
+                </div>
+
+                <div id="flavorSection" class="hidden space-y-4 pt-4 border-t border-stone-100">
+                    <label class="block text-sm font-black uppercase tracking-wider text-[#5B7290] mb-2">2. 請挑選要放入此盒的可麗露口味與數量：</label>
+                    <div id="flavorMenu" class="space-y-2">
+                        </div>
+                    
+                    <div class="pt-4">
+                        <button type="button" onclick="packBoxToCart()" class="w-full bg-[#5B7290] text-white font-extrabold tracking-widest p-4 rounded-xl hover:bg-[#3E4F66] transition-colors text-base uppercase shadow-sm cursor-pointer">
+                            📦 確認此盒口味，打包放入購物車
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <form id="orderForm" class="bg-white p-6 md:p-10 rounded-2xl shadow-xs border border-stone-100 space-y-8" onsubmit="handleOrderSubmit(event)">
                 
                 <div>
-                    <h3 class="text-lg font-extrabold text-[#5B7290] tracking-widest border-b-2 border-stone-100 pb-3.5 mb-6 uppercase">Step 02. 確認購物明細</h3>
+                    <h3 class="text-lg font-extrabold text-[#5B7290] tracking-widest border-b-2 border-stone-100 pb-3.5 mb-6 uppercase">Step 02. 確認已打包的禮盒明細</h3>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-base">
+                        <table class="w-full text-left text-base min-w-[450px]">
                             <thead>
                                 <tr class="border-b border-stone-200 text-stone-500 font-bold">
-                                    <th class="p-3 pl-0">品項名稱</th>
-                                    <th class="p-3 w-20">單價</th>
-                                    <th class="p-3 w-24 text-center">數量</th>
-                                    <th class="p-3 w-24">小計</th>
-                                    <th class="p-3 w-12 text-center"></th>
+                                    <th class="p-3 pl-0">禮盒與內容物詳情</th>
+                                    <th class="p-3 w-24 text-right">小計</th>
+                                    <th class="p-3 w-16 text-center">刪除</th>
                                 </tr>
                             </thead>
                             <tbody id="cartTableBody" class="divide-y divide-stone-100">
                                 <tr>
-                                    <td colspan="5" class="p-8 text-center text-stone-400 text-base">購物車目前是空的，請由上方挑選商品</td>
+                                    <td colspan="3" class="p-8 text-center text-stone-400 text-base">購物車目前空空的，請由上方客製化禮盒並打包進來喔！</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <div class="pt-2">
-                    <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">基本手提紙袋/外包裝確認 *</label>
-                    <select id="packSelect" class="w-full p-4 border border-stone-300 rounded-xl bg-stone-50 focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] text-base font-medium cursor-pointer h-14" onchange="calculateTotal()" required>
-                        <option value="">載入中...</option>
-                    </select>
+                <div class="space-y-6 pt-4">
+                    <h3 class="text-lg font-extrabold text-[#5B7290] tracking-widest border-b-2 border-stone-100 pb-3.5 mb-6 uppercase">Step 03. 填寫訂購資訊</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">訂購人姓名 *</label>
+                            <input type="text" id="custName" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] h-14" placeholder="請輸入姓名" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">聯絡電話 *</label>
+                            <input type="tel" id="custPhone" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] h-14" placeholder="請輸入手機號碼" required>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2 text-[#5B7290]">取貨/寄送日期 *</label>
+                            <select id="shipDate" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] bg-white font-bold text-stone-800 cursor-pointer h-14" required>
+                                </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">配送方式 *</label>
+                            <select id="shipMethod" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] cursor-pointer h-14" onchange="toggleAddress()" required>
+                                <option value="store">門市自取 (免運費)</option>
+                                <option value="delivery">黑貓宅配 (運費另計)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="addressGroup" class="hidden transition-all duration-300">
+                        <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">宅配收件地址 *</label>
+                        <input type="text" id="custAddress" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] h-14" placeholder="請填寫完整收件地址">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">備註說明</label>
+                        <textarea id="orderNote" rows="3" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290]" placeholder="若有其他特殊需求請在此註記說明"></textarea>
+                    </div>
                 </div>
+
+                <div class="bg-stone-50 p-6 rounded-xl space-y-2 text-right text-stone-600 text-sm tracking-wide border border-stone-100">
+                    <div>全品項含禮盒總計 Subtotal: <span id="subtotalDisplay" class="font-bold text-base text-stone-800">$0</span></div>
+                    <div id="shipFeeDisplay" class="hidden">宅配運費 Shipping: <span class="font-bold text-base text-stone-800">+$160</span></div>
+                    <div class="text-[#222222] font-black text-2xl pt-3 border-t border-stone-200 mt-3">
+                        總金額 Total：<span id="totalDisplay" class="text-2xl font-black text-[#5B7290]">$0</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-[#5B7290] text-white font-extrabold tracking-widest p-4.5 rounded-xl hover:bg-[#3E4F66] transition-colors duration-200 shadow-md cursor-pointer text-base uppercase">
+                    送出預購訂單 Submit Order
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        function toggleAddress() {
+            const method = document.getElementById('shipMethod').value;
+            const addrGroup = document.getElementById('addressGroup');
+            const addrInput = document.getElementById('custAddress');
+            const shipFeeDisplay = document.getElementById('shipFeeDisplay');
+            
+            if(method === 'delivery') {
+                addrGroup.classList.remove('hidden');
+                addrInput.required = true;
+                shipFeeDisplay.classList.remove('hidden');
+                shipFeeDisplay.querySelector('span').innerText = `+$${shippingFee}`;
+            } else {
+                addrGroup.classList.add('hidden');
+                addrInput.required = false;
+                addrInput.value = "";
+                shipFeeDisplay.classList.add('hidden');
+            }
+            calculateTotal();
+        }
+
+        function parseAndRenderCustomDates(dateString) {
+            const dateSelect = document.getElementById('shipDate');
+            let optionsHtml = `<option value="" disabled selected>-- 請選擇取貨/寄送日期 --</option>`;
+            if(dateString && dateString.trim() !== "") {
+                const dateArr = dateString.split(',');
+                dateArr.forEach(dStr => {
+                    const cleanDate = dStr.trim();
+                    if(cleanDate !== "") {
+                        const parts = cleanDate.split('-');
+                        if(parts.length === 3) {
+                            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+                            const weekday = ["日", "一", "二", "三", "四", "五", "六"][dateObj.getDay()];
+                            optionsHtml += `<option value="${cleanDate}">${cleanDate} (星期${weekday})</option>`;
+                        } else {
+                            optionsHtml += `<option value="${cleanDate}">${cleanDate}</option>`;
+                        }
+                    }
+                });
+            } else {
+                optionsHtml = `<option value="" disabled>目前無開放日期，請聯繫店家</option>`;
+            }
+            dateSelect.innerHTML = optionsHtml;
+        }
+
+        async function fetchOptions() {
+            try {
+                const res = await fetch(`${API_URL}?action=getFormOptions`);
+                const data = await res.json();
+                localProducts = data.products;
+                localPackaging = data.packaging;
+                
+                let rawDateSetting = "";
+
+                if(data.settings) {
+                    document.getElementById('txtShopName').innerText = data.settings.shop_name || "Lilou";
+                    document.getElementById('txtMainTitle').innerText = data.settings.main_title || "Lilou 可麗露預購";
+                    document.getElementById('txtSubTitle').innerText = data.settings.sub_title || "客製化挑選您的精緻禮盒";
+                    document.title = data.settings.main_title || "Lilou 可麗露預購";
+                    rawDateSetting = data.settings.available_dates || "";
+                }
+
+                // 1. 渲染大盒子的下拉選單
+                const boxSelect = document.getElementById('boxSelect');
+                boxSelect.innerHTML = `<option value="" disabled selected>-- 請選擇這一個禮盒的包裝樣式 --</option>` + localPackaging.map(p => 
+                    `<option value="${p.name}" data-extra="${p.extra_price}">${p.name} (+$${p.extra_price})</option>`
+                ).join('');
+
+                // 2. 預先渲染好口味清單的骨架 (等盒子選了才秀出來)
+                const fMenu = document.getElementById('flavorMenu');
+                fMenu.innerHTML = localProducts.map((p, idx) => {
+                    const isOut = p.stock <= 0;
+                    return `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between py-3 border-b border-stone-100 last:border-0 gap-2">
+                        <div class="flex-1 min-w-0">
+                            <span class="font-bold text-stone-900 text-base break-words">${p.name}</span>
+                            <span class="text-[#5B7290] font-bold text-base ml-2">$${p.price}</span>
+                        </div>
+                        <div class="flex items-center gap-4 justify-between md:justify-end">
+                            <span class="text-xs text-stone-400">庫存：${p.stock} 顆</span>
+                            <input type="number" id="flavorQty_${idx}" data-[#idx]="${idx}" min="0" max="${p.stock}" value="0" ${isOut ? 'disabled' : ''} class="flavor-input w-16 p-2 border border-stone-300 rounded-xl text-center text-base font-bold bg-white focus:outline-none h-10">
+                        </div>
+                    </div>`;
+                }).join('');
+
+                parseAndRenderCustomDates(rawDateSetting);
+                renderCart();
+            } catch (err) {
+                alert("數據載入失敗，請確認 Apps Script 網址是否正確。");
+            }
+        }
+
+        // 當使用者挑選了盒子，才亮出口味搭配區
+        function handleBoxChange() {
+            const boxSelect = document.getElementById('boxSelect');
+            const fSection = document.getElementById('flavorSection');
+            if(boxSelect.value !== "") {
+                fSection.classList.remove('hidden');
+            } else {
+                fSection.classList.add('hidden');
+            }
+        }
+
+        // 💡 關鍵功能：打包這一盒放進購物車
+        function packBoxToCart() {
+            const boxSelect = document.getElementById('boxSelect');
+            const boxName = boxSelect.value;
+            const boxExtra = parseInt(boxSelect.selectedOptions[0].getAttribute('data-extra')) || 0;
+
+            let boxFlavors = [];
+            let totalFlavorsCountInBox = 0;
+            let boxFlavorsCost = 0;
+
+            // 抓取畫面上所有大於 0 的口味數量
+            const inputs = document.querySelectorAll('.flavor-input');
+            inputs.forEach(input => {
+                const qty = parseInt(input.value) || 0;
+                if(qty > 0) {
+                    const idx = parseInt(input.getAttribute('data-[#idx]'));
+                    const product = localProducts[idx];
+
+                    boxFlavors.push({
+                        name: product.name,
+                        price: product.price,
+                        quantity: qty
+                    });
+
+                    totalFlavorsCountInBox += qty;
+                    boxFlavorsCost += (product.price * qty);
+                }
+            });
+
+            if(totalFlavorsCountInBox === 0) {
+                alert("這一盒裡面還沒有裝任何顆可麗露喔！請先輸入口味數量。");
+                return;
+            }
+
+            // 打包成一盒物件塞入購物車陣列
+            cart.push({
+                boxName: boxName,
+                boxExtra: boxExtra,
+                flavors: boxFlavors,
+                flavorsCost: boxFlavorsCost,
+                totalQty: totalFlavorsCountInBox,
+                boxTotalCost: boxFlavorsCost + boxExtra
+            });
+
+            alert(`成功打包第 ${cart.length} 盒放入明細！\n包裝：${boxName}\n內裝總計 ${totalFlavorsCountInBox} 顆可麗露。`);
+
+            // 重置客製化區塊，讓客人可以接著配下一盒
+            boxSelect.value = "";
+            document.getElementById('flavorSection').classList.add('hidden');
+            inputs.forEach(input => input.value = "0");
+
+            renderCart();
+        }
+
+        function removeFromCart(cartIdx) {
+            cart.splice(cartIdx, 1);
+            renderCart();
+        }
+
+        // 渲染以「盒」為單位的購物車
+        function renderCart() {
+            const cBody = document.getElementById('cartTableBody');
+            if(cart.length === 0) {
+                cBody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-stone-400 text-base">購物車目前空空的，請由上方客製化禮盒並打包進來喔！</td></tr>`;
+                calculateTotal(); return;
+            }
+
+            cBody.innerHTML = cart.map((box, i) => {
+                // 將這盒裡面的口味串成文字顯示
+                const flavorDetailHtml = box.flavors.map(f => `${f.name} x ${f.quantity}顆`).join('、');
+                return `
+                <tr class="text-stone-700">
+                    <td class="py-4 pr-3">
+                        <div class="font-extrabold text-base text-stone-900 tracking-wide">📦 組合 ${i+1}：${box.boxName} (+$${box.boxExtra})</div>
+                        <div class="text-sm text-[#5B7290] font-bold mt-1 pl-4">👉 內含口味：${flavorDetailHtml} (共 ${box.totalQty} 顆)</div>
+                    </td>
+                    <td class="py-4 text-right font-black text-base text-stone-900">$${box.boxTotalCost}</td>
+                    <td class="py-4 text-center">
+                        <button type="button" onclick="removeFromCart(${i})" class="text-stone-400 hover:text-red-500 font-black text-lg transition-colors cursor-pointer px-3">✕</button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let subtotal = 0;
+            cart.forEach(box => { subtotal += box.boxTotalCost; });
+            
+            document.getElementById('subtotalDisplay').innerText = `$${subtotal}`;
+            const shipMethod = document.getElementById('shipMethod').value;
+            let finalTotal = subtotal;
+            if(shipMethod === 'delivery') finalTotal += shippingFee;
+            document.getElementById('totalDisplay').innerText = `$${finalTotal}`;
+            return finalTotal;
+        }
+
+        async function handleOrderSubmit(e) {
+            e.preventDefault();
+            if(cart.length === 0) { 
+                alert("明細中還沒有任何打包好的禮盒，請先至 Step 01 組裝並打包禮盒！"); 
+                return; 
+            }
+
+            // 💡 完美壓縮：將所有包裝與分盒細節整理成一條完美字串傳入試算表
+            const orderProductSummary = cart.map((box, i) => {
+                const flavorsStr = box.flavors.map(f => `${f.name}(${f.quantity}個)`).join('、');
+                return `【第${i+1}盒: ${box.boxName}】${flavorsStr}`;
+            }).join(' ｜ ');
+
+            const orderPackSummary = cart.map((box, i) => `[盒${i+1}]${box.boxName}`).join('、');
+            const totalQtyAll = cart.reduce((sum, box) => sum + box.totalQty, 0);
+
+            const orderData = {
+                action: "submitOrder",
+                name: document.getElementById('custName').value,
+                phone: document.getElementById('custPhone').value,
+                date: document.getElementById('shipDate').value,
+                shipping_method: document.getElementById('shipMethod').value === 'store' ? "門市自取" : "黑貓宅配",
+                address: document.getElementById('custAddress').value,
+                product_name: orderProductSummary, // 寫入如："【第1盒: 8入禮盒】原味(4個)、抹茶(4個) ｜ 【第2盒: 16入禮盒】巧克力(16個)"
+                quantity: totalQtyAll,              // 總可麗露顆數
+                packaging_name: orderPackSummary,   // 包裝清單總覽
+                total_price: calculateTotal(),
+                note: document.getElementById('orderNote').value
+            };
+
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(orderData) });
+                const result = await res.json();
+                if(result.status === "success") {
+                    alert("🎉 預購單送出成功！已為您保留數量與各盒包裝費用。");
+                    cart = [];
+                    document.getElementById('orderForm').reset();
+                    document.getElementById('addressGroup').classList.add('hidden');
+                    document.getElementById('shipFeeDisplay').classList.add('hidden');
+                    fetchOptions();
+                }
+            } catch(err) { alert("送出訂單時發生錯誤，請稍後再試。"); }
+        }
+
+        fetchOptions();
+    </script>
+</body>
+</html>                </div>
 
                 <div class="space-y-6 pt-4">
                     <h3 class="text-lg font-extrabold text-[#5B7290] tracking-widest border-b-2 border-stone-100 pb-3.5 mb-6 uppercase">Step 03. 填寫訂購資訊</h3>
