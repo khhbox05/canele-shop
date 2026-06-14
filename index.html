@@ -23,7 +23,12 @@
         let cart = []; 
         let localProducts = []; 
         let localPackaging = [];
-        let currentBoxLimit = null; // 當前選擇盒子的限制數量
+        let currentBoxLimit = null; 
+
+        // 預設日期參數（若試算表沒設定會以此為基礎，會由 fetchOptions 動態更新）
+        let storePickupDays = 5; 
+        let deliveryDaysRange = 15; 
+        let storeOffDays = []; 
     </script>
 
     <nav class="bg-[#5B7290] text-white p-5 shadow-sm sticky top-0 z-50">
@@ -108,16 +113,16 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2 text-[#5B7290]">取貨/寄送日期 *</label>
-                            <select id="shipDate" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] bg-white font-bold text-stone-800 cursor-pointer h-14" required>
-                                </select>
-                        </div>
-                        <div>
                             <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">配送方式 *</label>
-                            <select id="shipMethod" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] cursor-pointer h-14" onchange="toggleAddress()" required>
+                            <select id="shipMethod" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] cursor-pointer h-14" onchange="handleShippingMethodChange()" required>
                                 <option value="store">門市自取 (免運費)</option>
                                 <option value="delivery">黑貓宅配 (運費另計)</option>
                             </select>
+                        </div>
+                        <div>
+                            <label id="dateLabel" class="block text-sm font-black uppercase tracking-wider text-[#5B7290] mb-2">門市自取日期 *</label>
+                            <select id="shipDate" class="w-full p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] bg-white font-bold text-stone-800 cursor-pointer h-14" required>
+                                </select>
                         </div>
                     </div>
 
@@ -148,46 +153,74 @@
     </main>
 
     <script>
-        function toggleAddress() {
+        function handleShippingMethodChange() {
             const method = document.getElementById('shipMethod').value;
             const addrGroup = document.getElementById('addressGroup');
             const addrInput = document.getElementById('custAddress');
             const shipFeeDisplay = document.getElementById('shipFeeDisplay');
+            const dateLabel = document.getElementById('dateLabel');
             
             if(method === 'delivery') {
                 addrGroup.classList.remove('hidden');
                 addrInput.required = true;
                 shipFeeDisplay.classList.remove('hidden');
                 shipFeeDisplay.querySelector('span').innerText = `+$${shippingFee}`;
+                
+                dateLabel.innerText = "希望到貨日期 *";
+                // 💡 這裡改為帶入由雲端抓下來的動態自訂天數 (deliveryDaysRange)
+                generateDeliveryDates(deliveryDaysRange);
             } else {
                 addrGroup.classList.add('hidden');
                 addrInput.required = false;
                 addrInput.value = "";
                 shipFeeDisplay.classList.add('hidden');
+                
+                dateLabel.innerText = "門市自取日期 *";
+                generatePickupDates(storePickupDays);
             }
             calculateTotal();
         }
 
-        function parseAndRenderCustomDates(dateString) {
+        function generatePickupDates(days) {
             const dateSelect = document.getElementById('shipDate');
-            let optionsHtml = `<option value="" disabled selected>-- 請選擇取貨/寄送日期 --</option>`;
-            if(dateString && dateString.trim() !== "") {
-                const dateArr = dateString.split(',');
-                dateArr.forEach(dStr => {
-                    const cleanDate = dStr.trim();
-                    if(cleanDate !== "") {
-                        const parts = cleanDate.split('-');
-                        if(parts.length === 3) {
-                            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
-                            const weekday = ["日", "一", "二", "三", "四", "五", "六"][dateObj.getDay()];
-                            optionsHtml += `<option value="${cleanDate}">${cleanDate} (星期${weekday})</option>`;
-                        } else {
-                            optionsHtml += `<option value="${cleanDate}">${cleanDate}</option>`;
-                        }
-                    }
-                });
-            } else {
-                optionsHtml = `<option value="" disabled>目前無開放日期，請聯繫店家</option>`;
+            let optionsHtml = `<option value="" disabled selected>-- 請選擇自取日期 --</option>`;
+            
+            let count = 0;
+            let i = 1; 
+
+            while (count < days && i < 100) { 
+                let d = new Date();
+                d.setDate(d.getDate() + i);
+                let dayOfWeek = d.getDay(); 
+                
+                if (!storeOffDays.includes(dayOfWeek)) {
+                    let yyyy = d.getFullYear();
+                    let mm = String(d.getMonth() + 1).padStart(2, '0');
+                    let dd = String(d.getDate()).padStart(2, '0');
+                    const weekday = ["日", "一", "二", "三", "四", "五", "六"][dayOfWeek];
+                    const dateStr = `${yyyy}-${mm}-${dd}`;
+                    optionsHtml += `<option value="${dateStr}">${dateStr} (星期${weekday})</option>`;
+                    count++;
+                }
+                i++;
+            }
+            dateSelect.innerHTML = optionsHtml;
+        }
+
+        // 💡 宅配到貨日期：依據後台傳過來的 range 變數，動態渲染 X 天區間
+        function generateDeliveryDates(range) {
+            const dateSelect = document.getElementById('shipDate');
+            let optionsHtml = `<option value="" disabled selected>-- 請選擇希望到貨日期 --</option>`;
+            
+            for (let i = 1; i <= range; i++) {
+                let d = new Date();
+                d.setDate(d.getDate() + i);
+                let yyyy = d.getFullYear();
+                let mm = String(d.getMonth() + 1).padStart(2, '0');
+                let dd = String(d.getDate()).padStart(2, '0');
+                const weekday = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
+                const dateStr = `${yyyy}-${mm}-${dd}`;
+                optionsHtml += `<option value="${dateStr}">${dateStr} (星期${weekday})</option>`;
             }
             dateSelect.innerHTML = optionsHtml;
         }
@@ -199,9 +232,17 @@
                 localProducts = data.products;
                 localPackaging = data.packaging;
                 
-                let rawDateSetting = "";
                 if(data.settings) {
-                    rawDateSetting = data.settings.available_dates || "";
+                    if(data.settings.store_pickup_days !== undefined) {
+                        storePickupDays = parseInt(data.settings.store_pickup_days) || 5;
+                    }
+                    // 💡 同步讀取試算表中設定的宅配區間天數
+                    if(data.settings.delivery_days_range !== undefined) {
+                        deliveryDaysRange = parseInt(data.settings.delivery_days_range) || 15;
+                    }
+                    if(data.settings.store_off_days !== undefined && data.settings.store_off_days.trim() !== "") {
+                        storeOffDays = data.settings.store_off_days.split(',').map(num => parseInt(num.trim()));
+                    }
                 }
 
                 const boxSelect = document.getElementById('boxSelect');
@@ -209,7 +250,7 @@
                     `<option value="${p.name}" data-extra="${p.extra_price}">${p.name} (+$${p.extra_price})</option>`
                 ).join('');
 
-                parseAndRenderCustomDates(rawDateSetting);
+                handleShippingMethodChange();
                 renderFlavorMenu();
                 renderCart();
             } catch (err) {
@@ -245,7 +286,6 @@
             }).join('');
         }
 
-        // 💡 核心功能：當使用者換盒子時，自動提取文字中的數字（例如 8入禮盒 ➡️ 8）
         function handleBoxChange() {
             const boxSelect = document.getElementById('boxSelect');
             const fSection = document.getElementById('flavorSection');
@@ -253,14 +293,12 @@
             
             if(boxSelect.value !== "") {
                 fSection.classList.remove('hidden');
-                
-                // 正則表達式抓取文字中的連續數字
                 const match = boxSelect.value.match(/\d+/);
                 if (match) {
                     currentBoxLimit = parseInt(match[0]);
                     boxLimitTip.innerText = `此包裝限制容量：${currentBoxLimit} 個`;
                 } else {
-                    currentBoxLimit = null; // 代表不限容量（如單顆自用袋裝）
+                    currentBoxLimit = null;
                     boxLimitTip.innerText = "此包裝不限制容量";
                 }
             } else {
@@ -269,51 +307,39 @@
                 currentBoxLimit = null;
             }
             
-            // 換盒子時把輸入框歸零並重算
             const inputs = document.querySelectorAll('.flavor-input');
             inputs.forEach(input => input.value = "0");
             calculateCurrentBoxTotal();
         }
 
-        // 💡 核心功能：即時監聽並更新當前這盒塞了幾個
         function calculateCurrentBoxTotal() {
             const inputs = document.querySelectorAll('.flavor-input');
             let currentTotal = 0;
-            inputs.forEach(input => {
-                currentTotal += parseInt(input.value) || 0;
-            });
+            inputs.forEach(input => { currentTotal += parseInt(input.value) || 0; });
 
             const display = document.getElementById('currentBoxCountDisplay');
             if (currentBoxLimit) {
                 display.innerText = `當前已選: ${currentTotal} / ${currentBoxLimit} 個`;
-                
-                // 動態限制 max 上限，不讓使用者往上按超過空位
                 inputs.forEach(input => {
                     const idx = parseInt(input.getAttribute('data-[#idx]'));
                     const product = localProducts[idx];
-                    
                     let occupiedInCart = 0;
                     cart.forEach(savedBox => {
                         const matchFlavor = savedBox.flavors.find(f => f.name === product.name);
                         if (matchFlavor) occupiedInCart += matchFlavor.quantity;
                     });
                     const virtualStock = product.stock - occupiedInCart;
-                    
                     const selfValue = parseInt(input.value) || 0;
                     const leftSpaceInBox = currentBoxLimit - currentTotal;
-                    
-                    // 新的最大上限是「自身目前的量 + 盒子剩餘空位」或「虛擬庫存量」兩者取小的
                     const newMax = Math.min(selfValue + leftSpaceInBox, virtualStock);
                     input.max = newMax >= 0 ? newMax : 0;
                 });
             } else {
                 display.innerText = `當前已選: ${currentTotal} 個`;
             }
-            
             return currentTotal;
         }
 
-        // 打包禮盒加入購物車（新增盒容量精準限制防呆）
         function packBoxToCart() {
             const boxSelect = document.getElementById('boxSelect');
             const boxName = boxSelect.value;
@@ -352,13 +378,8 @@
             }
 
             if (hasError) return;
+            if(totalFlavorsCountInBox === 0) { alert("這一盒裡面還沒有裝任何顆可麗露喔！"); return; }
 
-            if(totalFlavorsCountInBox === 0) {
-                alert("這一盒裡面還沒有裝任何顆可麗露喔！請先輸入口味數量。");
-                return;
-            }
-
-            // 💡 核心防呆：如果包裝名稱有指定限制數量，總和必須完全精準相等才放行
             if (currentBoxLimit && totalFlavorsCountInBox !== currentBoxLimit) {
                 alert(`數量不符！您選擇的是「${boxName}」，這盒必須剛好裝滿 ${currentBoxLimit} 個品項。目前裝了 ${totalFlavorsCountInBox} 個，請調整後再打包。`);
                 return;
