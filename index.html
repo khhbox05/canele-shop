@@ -226,20 +226,35 @@
             dateSelect.innerHTML = optionsHtml;
         }
 
+        // 💡 智慧頻率快取：本地 30 秒冷卻防禦盾，徹底阻絕 Google 的頻率超載卡頓
         async function fetchOptions() {
             const CACHE_KEY = "lilou_shop_fast_cache";
-            const cached = localStorage.getItem(CACHE_KEY);
+            const TIME_KEY = "lilou_shop_cache_time";
             
+            const cached = localStorage.getItem(CACHE_KEY);
+            const cachedTime = localStorage.getItem(TIME_KEY);
+            const now = new Date().getTime();
+            
+            // 優先無條件秒開快取畫面
             if (cached) {
                 try { renderUIWithData(JSON.parse(cached)); } catch(e) {}
             }
 
+            // 🛡️ 流量防護拦截：如果距離上一次讀取不到 30 秒，直接退出，拒絕高頻轟炸 Google
+            if (cached && cachedTime && (now - parseInt(cachedTime) < 30000)) {
+                console.log("🛡️ 觸發本地安全防禦：30秒內免更新，跳過 Google 請求");
+                return; 
+            }
+
             try {
-                const cacheBuster = `&_=${new Date().getTime()}`;
+                const cacheBuster = `&_=${now}`;
                 const res = await fetch(`${API_URL}?action=getFormOptions${cacheBuster}`);
                 const data = await res.json();
                 
+                // 記錄本次成功讀取的時間點
                 localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+                localStorage.setItem(TIME_KEY, now.toString());
+                
                 renderUIWithData(data);
             } catch (err) {
                 console.error("同步失敗", err);
