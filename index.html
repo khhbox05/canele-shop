@@ -12,7 +12,6 @@
             --brand-bg: #F4F6F9;          
             --brand-text-dark: #222222;   
         }
-        /* 針對手機瀏覽器優化點擊高亮與輸入框外觀 */
         input, select, textarea {
             -webkit-appearance: none;
             appearance: none;
@@ -36,41 +35,38 @@
         let appliedCoupon = null; 
     </script>
 
-    <nav class="bg-[#5B7290] text-white p-4 shadow-sm sticky top-0 z-50 backdrop-blur-md bg-opacity-95">
+    <nav class="bg-[#5B7290] text-white p-4 md:p-5 shadow-sm sticky top-0 z-50 backdrop-blur-md bg-opacity-95">
         <div class="max-w-3xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-black tracking-widest">Lilou</h1>
-            <span class="text-xs border border-white/40 px-3 py-1 rounded-full text-white/90 tracking-wider font-medium">ONLINE SHOP</span>
+            <h1 class="text-xl md:text-2xl font-black tracking-widest">Lilou</h1>
+            <span class="text-xs md:text-sm border border-white/40 px-3.5 py-1 rounded-full text-white/90 tracking-wider font-medium">ONLINE SHOP</span>
         </div>
     </nav>
 
-    <main class="max-w-3xl mx-auto p-4 md:py-10 space-y-6">
+    <main class="max-w-3xl mx-auto p-4 md:p-6 md:py-12 space-y-6 md:space-y-8">
         
-        <section class="space-y-6">
+        <section class="space-y-6 md:space-y-8">
             <div class="text-center py-2 space-y-2">
-                <h2 class="text-2xl md:text-3xl font-black text-[#222222] tracking-wider">本週限量甜點預購</h2>
-                <p class="text-stone-500 text-xs md:text-sm tracking-wide max-w-sm mx-auto leading-relaxed">客製化挑選您的精緻組合，每週限量供應。</p>
+                <h2 class="text-2xl md:text-4xl font-black text-[#222222] tracking-wider">本週限量甜點預購</h2>
+                <p class="text-stone-500 text-xs md:text-base tracking-wide max-w-sm md:max-w-xl mx-auto leading-relaxed">客製化挑選您的精緻組合，每週限量供應。</p>
             </div>
 
             <div class="bg-white p-4 md:p-8 rounded-2xl shadow-xs border border-stone-100 space-y-5">
                 <div class="flex items-center gap-2 border-b border-stone-100 pb-3 mb-1">
-                    <span class="bg-[#5B7290] text-white text-xs font-black px-2 py-0.5 rounded">01</span>
-                    <h3 class="text-sm font-black text-[#5B7290] tracking-widest uppercase">客製化您的組合</h3>
+                    <span class="bg-[#5B7290] text-white text-xs md:text-sm font-black px-2 py-0.5 rounded">01</span>
+                    <h3 class="text-sm md:text-base font-black text-[#5B7290] tracking-widest uppercase">客製化您的組合</h3>
                 </div>
                 
                 <div class="space-y-2">
-                    <div class="flex justify-between items-baseline">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-stone-600">1. 請先挑選包裝類型 *</label>
-                        <span id="boxLimitTip" class="text-xs font-black text-[#5B7290]"></span>
-                    </div>
-                    <select id="boxSelect" class="w-full px-3 border border-stone-200 rounded-xl bg-stone-50 focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] text-sm font-bold cursor-pointer h-12" onchange="handleBoxChange()">
+                    <label class="block text-xs md:text-sm font-bold uppercase tracking-wider text-stone-600">1. 請先挑選包裝類型 *</label>
+                    <select id="boxSelect" class="w-full px-3 border border-stone-200 rounded-xl bg-stone-50 focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] text-sm md:text-base font-bold cursor-pointer h-12 md:h-14" onchange="handleBoxChange()">
                         <option value="" disabled selected>📦 庫存查詢中...</option>
                     </select>
                 </div>
 
                 <div id="flavorSection" class="space-y-4 pt-3 border-t border-stone-100">
                     <div class="flex justify-between items-center">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-stone-600">2. 請挑選組合內口味與數量：</label>
-                        <span id="currentBoxCountDisplay" class="text-xs font-black text-stone-700 bg-stone-100 px-2 py-1 rounded-md">準備中...</span>
+                        <label class="block text-xs md:text-sm font-bold uppercase tracking-wider text-stone-600">2. 請挑選組合內口味與數量：</label>
+                        <span id="currentBoxCountDisplay" class="text-xs md:text-sm font-black text-stone-700 bg-stone-100 px-2 py-1 rounded-md">準備中...</span>
                     </div>
                     
                     <div id="flavorMenu" class="space-y-1 divide-y divide-stone-100">
@@ -85,91 +81,91 @@
                     </div>
                     
                     <div class="pt-2">
-                        <button type="button" onclick="packBoxToCart()" class="w-full bg-stone-300 text-white font-extrabold tracking-widest h-12 rounded-xl text-sm uppercase shadow-xs cursor-not-allowed transition-all duration-200 active:scale-[0.99]" id="packBtn" disabled>
+                        <button type="button" onclick="packBoxToCart()" class="w-full bg-stone-300 text-white font-extrabold tracking-widest h-12 md:h-14 rounded-xl text-sm md:text-base uppercase shadow-xs cursor-not-allowed transition-all duration-200" id="packBtn" disabled>
                             正在同步最新庫存中...
                         </button>
                     </div>
                 </div>
             </div>
 
-            <form id="orderForm" class="bg-white p-4 md:p-8 rounded-2xl shadow-xs border border-stone-100 space-y-6" onsubmit="handleOrderSubmit(event)">
+            <form id="orderForm" class="bg-white p-4 md:p-8 rounded-2xl shadow-xs border border-stone-100 space-y-6 md:space-y-8" onsubmit="handleOrderSubmit(event)">
                 
                 <div class="space-y-4">
                     <div class="flex items-center gap-2 border-b border-stone-100 pb-3">
-                        <span class="bg-[#5B7290] text-white text-xs font-black px-2 py-0.5 rounded">02</span>
-                        <h3 class="text-sm font-black text-[#5B7290] tracking-widest uppercase">確認已打包的組合明細</h3>
+                        <span class="bg-[#5B7290] text-white text-xs md:text-sm font-black px-2 py-0.5 rounded">02</span>
+                        <h3 class="text-sm md:text-base font-black text-[#5B7290] tracking-widest uppercase">確認已打包的組合明細</h3>
                     </div>
                     <div id="cartListContainer" class="space-y-2.5">
-                        <p class="text-stone-400 text-center py-6 text-xs">購物車目前空空的喔！</p>
+                        <p class="text-stone-400 text-center py-6 text-xs md:text-base">購物車目前空空的喔！</p>
                     </div>
                 </div>
 
-                <div class="space-y-4 pt-2">
+                <div class="space-y-4 md:space-y-6 pt-2">
                     <div class="flex items-center gap-2 border-b border-stone-100 pb-3">
-                        <span class="bg-[#5B7290] text-white text-xs font-black px-2 py-0.5 rounded">03</span>
-                        <h3 class="text-sm font-black text-[#5B7290] tracking-widest uppercase">填寫訂購資訊</h3>
+                        <span class="bg-[#5B7290] text-white text-xs md:text-sm font-black px-2 py-0.5 rounded">03</span>
+                        <h3 class="text-sm md:text-base font-black text-[#5B7290] tracking-widest uppercase">填寫訂購資訊</h3>
                     </div>
                     
-                    <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         <div>
-                            <label class="block text-xs font-bold text-stone-600 mb-1.5">訂購人姓名 *</label>
-                            <input type="text" id="custName" class="w-full px-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-[#5B7290] h-12 bg-stone-50/50" placeholder="請輸入姓名" required>
+                            <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">訂購人姓名 *</label>
+                            <input type="text" id="custName" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50" placeholder="請輸入姓名" required>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-stone-600 mb-1.5">聯絡電話 *</label>
-                            <input type="tel" id="custPhone" class="w-full px-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-[#5B7290] h-12 bg-stone-50/50" placeholder="請輸入手機號碼" required>
+                            <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">聯絡電話 *</label>
+                            <input type="tel" id="custPhone" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50" placeholder="請輸入手機號碼" required>
                         </div>
                     </div>
 
-                    <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         <div>
-                            <label class="block text-xs font-bold text-stone-600 mb-1.5">配送方式 *</label>
-                            <select id="shipMethod" class="w-full px-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-[#5B7290] cursor-pointer h-12 bg-stone-50/50" onchange="handleShippingMethodChange()" required>
+                            <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">配送方式 *</label>
+                            <select id="shipMethod" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] cursor-pointer h-12 md:h-14 bg-stone-50/50" onchange="handleShippingMethodChange()" required>
                                 <option value="store">門市自取 (免運費)</option>
                                 <option value="delivery">黑貓宅配 (運費另計)</option>
                             </select>
                         </div>
                         <div>
-                            <label id="dateLabel" class="block text-xs font-bold text-[#5B7290] mb-1.5">門市自取日期 *</label>
-                            <select id="shipDate" class="w-full px-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-[#5B7290] bg-white font-bold text-stone-800 cursor-pointer h-12" required>
+                            <label id="dateLabel" class="block text-xs md:text-sm font-bold text-[#5B7290] mb-1.5">門市自取日期 *</label>
+                            <select id="shipDate" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] bg-white font-bold text-stone-800 cursor-pointer h-12 md:h-14" required>
                                 <option value="" disabled selected>正在載入可用日期...</option>
                             </select>
                         </div>
                     </div>
 
                     <div id="addressGroup" class="hidden transition-all duration-300">
-                        <label class="block text-xs font-bold text-stone-600 mb-1.5">宅配收件地址 *</label>
-                        <input type="text" id="custAddress" class="w-full px-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-[#5B7290] h-12 bg-stone-50/50" placeholder="請填寫完整收件地址">
+                        <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">宅配收件地址 *</label>
+                        <input type="text" id="custAddress" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50" placeholder="請填寫完整收件地址">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-stone-600 mb-1.5">折扣碼 (選填)</label>
+                        <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">折扣碼 (選填)</label>
                         <div class="flex gap-2">
-                            <input type="text" id="couponInput" class="flex-1 px-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-[#5B7290] h-12 bg-stone-50/50 uppercase" placeholder="請輸入折扣碼">
-                            <button type="button" onclick="applyCouponCode(true)" class="bg-[#5B7290] text-white font-bold px-4 rounded-xl hover:bg-[#3E4F66] active:scale-[0.97] transition-all text-sm shrink-0 cursor-pointer h-12">
+                            <input type="text" id="couponInput" class="flex-1 px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50 uppercase" placeholder="請輸入折扣碼">
+                            <button type="button" onclick="applyCouponCode(true)" class="bg-[#5B7290] text-white font-bold px-4 md:px-6 rounded-xl hover:bg-[#3E4F66] transition-all text-sm md:text-base shrink-0 cursor-pointer h-12 md:h-14">
                                 套用
                             </button>
                         </div>
-                        <p id="couponMessage" class="text-xs font-bold mt-1.5 hidden"></p>
+                        <p id="couponMessage" class="text-xs md:text-sm font-bold mt-1.5 hidden"></p>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-stone-600 mb-1.5">備註說明</label>
-                        <textarea id="orderNote" rows="2" class="w-full p-3 border border-stone-200 rounded-xl text-sm focus:outline-none focus:border-[#5B7290] bg-stone-50/50" placeholder="若有特殊需求請在此註記"></textarea>
+                        <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">備註說明</label>
+                        <textarea id="orderNote" rows="2" class="w-full p-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] bg-stone-50/50" placeholder="若有特殊需求請在此註記"></textarea>
                     </div>
                 </div>
 
-                <div class="bg-stone-50 p-4 rounded-xl space-y-1.5 text-right text-stone-500 text-xs tracking-wide border border-stone-100">
-                    <div>商品總計 Subtotal: <span id="subtotalDisplay" class="font-bold text-stone-700">$0</span></div>
-                    <div id="shipFeeDisplay" class="hidden">宅配運費 Shipping: <span class="font-bold text-stone-700">+$160</span></div>
-                    <div id="couponDiscountDisplay" class="hidden text-red-500 font-bold">折扣折抵 Discount: <span>-$0</span></div>
+                <div class="bg-stone-50 p-4 md:p-6 rounded-xl space-y-1.5 text-right text-stone-500 text-xs md:text-sm tracking-wide border border-stone-100">
+                    <div>商品總計 Subtotal: <span id="subtotalDisplay" class="font-bold text-stone-700 md:text-base">$0</span></div>
+                    <div id="shipFeeDisplay" class="hidden">宅配運費 Shipping: <span class="font-bold text-stone-700 md:text-base">+$160</span></div>
+                    <div id="couponDiscountDisplay" class="hidden text-red-500 font-bold">折扣折抵 Discount: <span class="md:text-base">-$0</span></div>
                     
-                    <div class="text-[#222222] font-black text-xl pt-2.5 border-t border-stone-200 mt-2">
-                        總金額 Total：<span id="totalDisplay" class="text-xl font-black text-[#5B7290]">$0</span>
+                    <div class="text-[#222222] font-black text-xl md:text-2xl pt-2.5 border-t border-stone-200 mt-2">
+                        總金額 Total：<span id="totalDisplay" class="text-xl md:text-2xl font-black text-[#5B7290]">$0</span>
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-[#5B7290] text-white font-extrabold tracking-widest h-14 rounded-xl hover:bg-[#3E4F66] active:scale-[0.98] transition-all duration-150 shadow-sm cursor-pointer text-base uppercase">
+                <button type="submit" class="w-full bg-[#5B7290] text-white font-extrabold tracking-widest h-14 md:h-16 rounded-xl hover:bg-[#3E4F66] shadow-sm cursor-pointer text-base md:text-lg uppercase transition-colors duration-150">
                     送出預購訂單 Submit Order
                 </button>
             </form>
@@ -273,7 +269,7 @@
             if(savedVal) boxSelect.value = savedVal;
             
             const packBtn = document.getElementById('packBtn');
-            packBtn.className = "w-full bg-[#5B7290] text-white font-extrabold tracking-widest h-12 rounded-xl hover:bg-[#3E4F66] active:scale-[0.99] transition-all text-sm uppercase shadow-xs cursor-pointer";
+            packBtn.className = "w-full bg-[#5B7290] text-white font-extrabold tracking-widest h-12 md:h-14 rounded-xl hover:bg-[#3E4F66] transition-colors text-sm md:text-base uppercase shadow-xs cursor-pointer";
             packBtn.innerText = "確定組合，打包放入購物車";
             packBtn.disabled = false;
             
@@ -299,12 +295,12 @@
                 return `
                 <div class="flex items-center justify-between py-3 gap-2">
                     <div class="flex-1 min-w-0">
-                        <span class="font-bold text-stone-900 text-sm break-words block">${p.name}</span>
-                        <span class="text-[#5B7290] font-black text-sm">$${p.price}</span>
-                        <span class="text-[10px] ${isOut ? 'text-red-500 font-bold' : 'text-stone-400'} ml-0.5">剩 ${virtualStock >= 0 ? virtualStock : 0}</span>
+                        <span class="font-bold text-stone-900 text-sm md:text-base break-words block">${p.name}</span>
+                        <span class="text-[#5B7290] font-black text-sm md:text-base">$${p.price}</span>
+                        <span class="text-[10px] md:text-xs ${isOut ? 'text-red-500 font-bold' : 'text-stone-400'} ml-0.5">剩 ${virtualStock >= 0 ? virtualStock : 0}</span>
                     </div>
                     <div class="shrink-0">
-                        <input type="number" id="flavorQty_${idx}" data-idx="${idx}" min="0" max="${virtualStock >= 0 ? virtualStock : 0}" value="0" ${isOut ? 'disabled' : ''} class="flavor-input w-16 p-1 border border-stone-300 rounded-xl text-center text-sm font-black bg-white focus:outline-none h-9 disabled:bg-stone-100 disabled:text-stone-400" oninput="calculateCurrentBoxTotal(this)" onchange="calculateCurrentBoxTotal(this)">
+                        <input type="number" id="flavorQty_${idx}" data-idx="${idx}" min="0" max="${virtualStock >= 0 ? virtualStock : 0}" value="0" ${isOut ? 'disabled' : ''} class="flavor-input w-16 md:w-20 p-1 border border-stone-300 rounded-xl text-center text-sm md:text-base font-black bg-white focus:outline-none h-9 md:h-10 disabled:bg-stone-100 disabled:text-stone-400" oninput="calculateCurrentBoxTotal(this)" onchange="calculateCurrentBoxTotal(this)">
                     </div>
                 </div>`;
             }).join('');
@@ -312,13 +308,10 @@
 
         function handleBoxChange() {
             const boxSelect = document.getElementById('boxSelect');
-            const boxLimitTip = document.getElementById('boxLimitTip');
             if(boxSelect.value !== "") {
                 const match = boxSelect.value.match(/\d+/);
                 currentBoxLimit = match ? parseInt(match[0]) : null;
-                boxLimitTip.innerText = currentBoxLimit ? `限 ${currentBoxLimit} 個` : "不限容量";
             } else {
-                boxLimitTip.innerText = "";
                 currentBoxLimit = null;
             }
             document.querySelectorAll('.flavor-input').forEach(input => input.value = "0");
@@ -399,3 +392,159 @@
                 alert(`數量不符！「${boxName}」必須剛好裝滿 ${currentBoxLimit} 個品項。`);
                 return;
             }
+            cart.push({ boxName: boxName, boxExtra: boxExtra, flavors: boxFlavors, flavorsCost: boxFlavorsCost, totalQty: totalFlavorsCountInBox, boxTotalCost: boxFlavorsCost + boxExtra });
+            alert(`成功打包放入明細！`);
+            boxSelect.value = "";
+            currentBoxLimit = null;
+            renderFlavorMenu();
+            renderCart();
+        }
+
+        function removeFromCart(cartIdx) {
+            cart.splice(cartIdx, 1);
+            renderFlavorMenu();
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cartListContainer');
+            if(cart.length === 0) {
+                container.innerHTML = `<p class="text-stone-400 text-center py-6 text-xs md:text-base">購物車目前空空的喔！</p>`;
+                calculateTotal(); return;
+            }
+            container.innerHTML = cart.map((box, i) => {
+                const flavorDetailHtml = box.flavors.map(f => `${f.name} x ${f.quantity}個`).join('、');
+                return `
+                <div class="border border-stone-200 rounded-xl p-3 md:p-4 flex items-center justify-between gap-3 bg-stone-50/50">
+                    <div class="flex-1 min-w-0 space-y-0.5">
+                        <div class="font-extrabold text-sm md:text-base text-stone-900 tracking-wide">組合 ${i+1}：${box.boxName}</div>
+                        <div class="text-xs md:text-sm text-[#5B7290] font-bold leading-relaxed break-words">內含：${flavorDetailHtml}</div>
+                    </div>
+                    <div class="flex items-center gap-4 shrink-0">
+                        <div class="text-right"><span class="font-black text-sm md:text-base text-stone-950">$${box.boxTotalCost}</span></div>
+                        <button type="button" onclick="removeFromCart(${i})" class="bg-stone-100 text-stone-400 p-1.5 rounded-lg w-7 h-7 md:w-8 md:h-8 flex items-center justify-center font-bold text-xs md:text-sm">✕</button>
+                    </div>
+                </div>`;
+            }).join('');
+            calculateTotal();
+        }
+
+        function applyCouponCode(isUserClick = false) {
+            const inputVal = document.getElementById('couponInput').value.trim().toUpperCase();
+            const msgElement = document.getElementById('couponMessage');
+            if (inputVal === "") { appliedCoupon = null; msgElement.classList.add('hidden'); calculateTotal(); return; }
+            
+            let subtotal = 0; cart.forEach(box => { subtotal += box.boxTotalCost; });
+            const match = localCoupons.find(c => c.code === inputVal);
+            msgElement.classList.remove('hidden');
+            
+            if (match) {
+                const minSpendRequirement = Number(match.min_spend) || 0;
+                if (subtotal < minSpendRequirement) {
+                    appliedCoupon = null; 
+                    msgElement.innerText = `✕ 未達消費門檻！此折扣碼最低消費需滿 ${minSpendRequirement} 元。`;
+                    msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-orange-500";
+                    if(isUserClick) alert(`未達此折扣碼的低消門檻 $${minSpendRequirement} 元！`);
+                } else {
+                    appliedCoupon = match;
+                    msgElement.innerText = `✓ 成功套用折扣碼！(${match.type === 'minus' ? '現折 ' + match.value + ' 元' : '享 ' + (match.value * 10) + ' 折'})`;
+                    msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-emerald-600";
+                    if(isUserClick) alert("折扣碼套用成功！");
+                }
+            } else {
+                appliedCoupon = null;
+                msgElement.innerText = "✕ 折扣碼無效或已過期。";
+                msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-red-500";
+            }
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let subtotal = 0; cart.forEach(box => { subtotal += box.boxTotalCost; });
+            document.getElementById('subtotalDisplay').innerText = `$${subtotal}`;
+            const shipMethod = document.getElementById('shipMethod').value;
+            let finalTotal = subtotal;
+            if(shipMethod === 'delivery') finalTotal += shippingFee;
+            
+            if (appliedCoupon) {
+                const minSpendRequirement = Number(appliedCoupon.min_spend) || 0;
+                if (subtotal < minSpendRequirement) {
+                    appliedCoupon = null; 
+                    const msgElement = document.getElementById('couponMessage');
+                    msgElement.innerText = `✕ 組合變動，金額未達門檻 ${minSpendRequirement} 元，已自動取消折抵。`;
+                    msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-orange-500";
+                }
+            }
+            
+            let discountAmount = 0;
+            const couponDisplay = document.getElementById('couponDiscountDisplay');
+            if (appliedCoupon && subtotal > 0) {
+                if (appliedCoupon.type === 'minus') { discountAmount = Number(appliedCoupon.value) || 0; } 
+                else if (appliedCoupon.type === 'discount') { discountAmount = Math.round(subtotal * (1 - Number(appliedCoupon.value))); }
+                if (discountAmount > finalTotal) discountAmount = finalTotal;
+                finalTotal -= discountAmount;
+                couponDisplay.classList.remove('hidden');
+                couponDisplay.querySelector('span').innerText = `-$${discountAmount}`;
+            } else { couponDisplay.classList.add('hidden'); }
+            document.getElementById('totalDisplay').innerText = `$${finalTotal}`;
+            return finalTotal;
+        }
+
+        async function handleOrderSubmit(e) {
+            e.preventDefault();
+            if(cart.length === 0) { alert("明細中還沒有任何打包好的組合！"); return; }
+            
+            let currentSubtotal = 0; 
+            cart.forEach(box => { currentSubtotal += box.boxTotalCost; });
+            if (appliedCoupon) {
+                const minSpendRequirement = Number(appliedCoupon.min_spend) || 0;
+                if (currentSubtotal < minSpendRequirement) {
+                    alert(`折扣碼失效！商品總額未達低消門檻 $${minSpendRequirement} 元。`);
+                    applyCouponCode(false); 
+                    return;
+                }
+            }
+
+            const orderProductSummary = cart.map((box, i) => {
+                const flavorsStr = box.flavors.map(f => `${f.name}(${f.quantity}個)`).join('、');
+                return `【第${i+1}組: ${box.boxName}】${flavorsStr}`;
+            }).join(' ｜ ');
+            const orderPackSummary = cart.map((box, i) => `[組${i+1}]${box.boxName}`).join('、');
+            const totalQtyAll = cart.reduce((sum, box) => sum + box.totalQty, 0);
+            
+            const orderData = { 
+                action: "submitOrder", 
+                name: document.getElementById('custName').value, 
+                phone: document.getElementById('custPhone').value, 
+                date: document.getElementById('shipDate').value, 
+                shipping_method: document.getElementById('shipMethod').value === 'store' ? "Store Pickup" : "Delivery", 
+                address: document.getElementById('custAddress').value, 
+                product_name: orderProductSummary, 
+                quantity: totalQtyAll, 
+                packaging_name: orderPackSummary, 
+                total_price: calculateTotal(), 
+                note: document.getElementById('orderNote').value,
+                coupon_code: appliedCoupon ? appliedCoupon.code : "" 
+            };
+
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(orderData) });
+                const result = await res.json();
+                if(result.status === "success") {
+                    alert("預購單送出成功！已為您保留數量。");
+                    cart = []; appliedCoupon = null; 
+                    document.getElementById('orderForm').reset();
+                    document.getElementById('couponMessage').classList.add('hidden');
+                    document.getElementById('addressGroup').classList.add('hidden');
+                    document.getElementById('shipFeeDisplay').classList.add('hidden');
+                    
+                    document.getElementById('boxSelect').value = "";
+                    currentBoxLimit = null;
+                    fetchOptions(); 
+                }
+            } catch(err) { alert("送出訂單時發生錯誤，請稍後再試。"); }
+        }
+        fetchOptions();
+    </script>
+</body>
+</html>
