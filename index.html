@@ -17,8 +17,8 @@
 <body class="bg-[#F4F6F9] text-[#222222] min-h-screen font-sans">
 
     <script>
-        // ⚠️ 這裡已自動帶入你最新部署得到的全新 Web App URL (結尾必須是 /exec)
-        const API_URL = "https://script.google.com/macros/s/AKfycbxUKQtQX7j-oLmAr5Glrxj2JirnAUw8JC1Mp9XB6LZrCToKaUekN24K68f9Rds_v5Vm/exec";
+        // ⚠️ 這裡已自動帶入您最新綁定試算表 ID 部署得到的全新 Web App URL
+        const API_URL = "https://script.google.com/macros/s/AKfycbzcBB-TodTxi9P0IIyoii032EkHS4PfsZ6sHlmXMY7AAUaamMrH5ln4fQq6XpC6jeZG/exec";
         let shippingFee = 160; 
         let cart = []; 
         let localProducts = []; 
@@ -209,7 +209,6 @@
 
         async function fetchOptions() {
             try {
-                // 加上時間戳破除快取阻擋
                 const cacheBuster = `&_=${new Date().getTime()}`;
                 const res = await fetch(`${API_URL}?action=getFormOptions${cacheBuster}`);
                 const data = await res.json();
@@ -514,6 +513,13 @@
                     document.getElementById('couponMessage').classList.add('hidden');
                     document.getElementById('addressGroup').classList.add('hidden');
                     document.getElementById('shipFeeDisplay').classList.add('hidden');
+                    
+                    // ⭕ 補全修正：下單成功後，連同 Step 01 客製化區域也一併完美隱藏初始化
+                    document.getElementById('boxSelect').value = "";
+                    document.getElementById('flavorSection').classList.add('hidden');
+                    document.getElementById('boxLimitTip').innerText = "";
+                    currentBoxLimit = null;
+                    
                     fetchOptions(); 
                 }
             } catch(err) { alert("送出訂單時發生錯誤，請稍後再試。"); }
@@ -522,4 +528,3 @@
     </script>
 </body>
 </html>
-
