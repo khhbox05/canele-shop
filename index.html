@@ -124,7 +124,7 @@
                         <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">折扣碼 (選填)</label>
                         <div class="flex gap-2">
                             <input type="text" id="couponInput" class="flex-1 p-4 border border-stone-300 rounded-xl text-base focus:outline-none focus:border-[#5B7290] h-14 uppercase" placeholder="請輸入折扣碼">
-                            <button type="button" onclick="applyCouponCode()" class="bg-[#5B7290] text-white font-bold px-6 rounded-xl hover:bg-[#3E4F66] transition-colors text-base shrink-0 cursor-pointer h-14">
+                            <button type="button" onclick="applyCouponCode(true)" class="bg-[#5B7290] text-white font-bold px-6 rounded-xl hover:bg-[#3E4F66] transition-colors text-base shrink-0 cursor-pointer h-14">
                                 套用
                             </button>
                         </div>
@@ -215,12 +215,15 @@
             dateSelect.innerHTML = optionsHtml;
         }
 
+        // 💡 調整後的後台發送請求
         async function fetchOptions() {
             try {
                 const res = await fetch(`${API_URL}?action=getFormOptions`);
                 const data = await res.json();
                 localProducts = data.products;
                 localPackaging = data.packaging;
+                
+                // 讀取從後端 Coupons 傳過來的所有欄位 (包含了第四欄的 min_spend)
                 localCoupons = data.coupons || []; 
                 
                 if(data.settings) {
@@ -426,7 +429,8 @@
             calculateTotal();
         }
 
-        function applyCouponCode() {
+        // 💡 升級：折扣碼套用功能（支援低消限制驗證）
+        function applyCouponCode(isUserClick = false) {
             const inputVal = document.getElementById('couponInput').value.trim().toUpperCase();
             const msgElement = document.getElementById('couponMessage');
             
@@ -437,13 +441,27 @@
                 return;
             }
 
+            // 計算目前購物車裡面的商品加加總（不含運費）
+            let subtotal = 0;
+            cart.forEach(box => { subtotal += box.boxTotalCost; });
+
             const match = localCoupons.find(c => c.code === inputVal);
             msgElement.classList.remove('hidden');
 
             if (match) {
-                appliedCoupon = match;
-                msgElement.innerText = `✓ 成功套用折扣碼！(${match.type === 'minus' ? '現折 ' + match.value + ' 元' : '享 ' + (match.value * 10) + ' 折'})`;
-                msgElement.className = "text-sm font-bold mt-1.5 text-emerald-600";
+                // 🌟 核心防呆：檢查商品總金額是否小於該折扣碼的最低消費門檻 (min_spend)
+                const minSpendRequirement = Number(match.min_spend) || 0;
+                
+                if (subtotal < minSpendRequirement) {
+                    appliedCoupon = null; // 取消折扣資格
+                    msgElement.innerText = `✕ 未達消費門檻！此折扣碼最低消費需滿 ${minSpendRequirement} 元，目前組合總計為 ${subtotal} 元。`;
+                    msgElement.className = "text-sm font-bold mt-1.5 text-orange-500";
+                } else {
+                    appliedCoupon = match;
+                    msgElement.innerText = `✓ 成功套用折扣碼！(${match.type === 'minus' ? '現折 ' + match.value + ' 元' : '享 ' + (match.value * 10) + ' 折'})`;
+                    msgElement.className = "text-sm font-bold mt-1.5 text-emerald-600";
+                    if(isUserClick) alert("折扣碼套用成功！");
+                }
             } else {
                 appliedCoupon = null;
                 msgElement.innerText = "✕ 折扣碼無效或已過期，請重新確認。";
@@ -452,6 +470,7 @@
             calculateTotal();
         }
 
+        // 💡 計算金額邏輯優化（若在購物車刪減品項導致總計掉下低消，會自動觸發重新計算）
         function calculateTotal() {
             let subtotal = 0;
             cart.forEach(box => { subtotal += box.boxTotalCost; });
@@ -460,6 +479,17 @@
             const shipMethod = document.getElementById('shipMethod').value;
             let finalTotal = subtotal;
             if(shipMethod === 'delivery') finalTotal += shippingFee;
+
+            // 🌟 自動循環防呆：如果購物車商品變動導致未達低消，自動踢掉折扣
+            if (appliedCoupon) {
+                const minSpendRequirement = Number(appliedCoupon.min_spend) || 0;
+                if (subtotal < minSpendRequirement) {
+                    appliedCoupon = null; // 自動失效
+                    const msgElement = document.getElementById('couponMessage');
+                    msgElement.innerText = `✕ 組合變動，金額未達折扣碼最低消費門檻 ${minSpendRequirement} 元，已自動取消折抵。`;
+                    msgElement.className = "text-sm font-bold mt-1.5 text-orange-500";
+                }
+            }
 
             let discountAmount = 0;
             const couponDisplay = document.getElementById('couponDiscountDisplay');
@@ -494,13 +524,11 @@
             const orderPackSummary = cart.map((box, i) => `[組${i+1}]${box.boxName}`).join('、');
             const totalQtyAll = cart.reduce((sum, box) => sum + box.totalQty, 0);
             
-            // 🌟 封裝傳遞給後端的全英文 JSON Key 物件
             const orderData = { 
                 action: "submitOrder", 
                 name: document.getElementById('custName').value, 
                 phone: document.getElementById('custPhone').value, 
                 date: document.getElementById('shipDate').value, 
-                // 傳遞給試算表後端出貨單格式的也是英文固定值
                 shipping_method: document.getElementById('shipMethod').value === 'store' ? "Store Pickup" : "Delivery", 
                 address: document.getElementById('custAddress').value, 
                 product_name: orderProductSummary, 
