@@ -78,21 +78,9 @@
                 
                 <div>
                     <h3 class="text-lg font-extrabold text-[#5B7290] tracking-widest border-b-2 border-stone-100 pb-3.5 mb-6 uppercase">Step 02. 確認已打包的組合明細</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-base min-w-[450px]">
-                            <thead>
-                                <tr class="border-b border-stone-200 text-stone-500 font-bold">
-                                    <th class="p-3 pl-0">組合與內容物詳情</th>
-                                    <th class="p-3 w-24 text-right">小計</th>
-                                    <th class="p-3 w-16 text-center">刪除</th>
-                                </tr>
-                            </thead>
-                            <tbody id="cartTableBody" class="divide-y divide-stone-100">
-                                <tr>
-                                    <td colspan="3" class="p-8 text-center text-stone-400 text-base">購物車目前空空的，請由上方客製化組合並打包進來喔！</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    
+                    <div id="cartListContainer" class="space-y-3">
+                        <p class="text-stone-400 text-center py-8 text-base">購物車目前空空的，請由上方客製化組合並打包進來喔！</p>
                     </div>
                 </div>
 
@@ -387,27 +375,42 @@
             renderCart();
         }
 
+        // 💡 核心優化：改用 FlexBox 打造完美適應電腦與手機的購物車卡片
         function renderCart() {
-            const cBody = document.getElementById('cartTableBody');
+            const container = document.getElementById('cartListContainer');
             if(cart.length === 0) {
-                // 💡 修改：購物車目前空空的，請由上方客製化組合並打包進來喔！
-                cBody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-stone-400 text-base">購物車目前空空的，請由上方客製化組合並打包進來喔！</td></tr>`;
+                container.innerHTML = `<p class="text-stone-400 text-center py-8 text-base">購物車目前空空的，請由上方客製化組合並打包進來喔！</p>`;
                 calculateTotal(); return;
             }
-            cBody.innerHTML = cart.map((box, i) => {
+            
+            container.innerHTML = cart.map((box, i) => {
                 const flavorDetailHtml = box.flavors.map(f => `${f.name} x ${f.quantity}個`).join('、');
                 return `
-                <tr class="text-stone-700">
-                    <td class="py-4 pr-3">
-                        <div class="font-extrabold text-base text-stone-900 tracking-wide">組合 ${i+1}：${box.boxName} (+$${box.boxExtra})</div>
-                        <div class="text-sm text-[#5B7290] font-bold mt-1 pl-4">內含口味：${flavorDetailHtml} (共 ${box.totalQty} 個)</div>
-                    </td>
-                    <td class="py-4 text-right font-black text-base text-stone-900">$${box.boxTotalCost}</td>
-                    <td class="py-4 text-center">
-                        <button type="button" onclick="removeFromCart(${i})" class="text-stone-400 hover:text-red-500 font-black text-lg transition-colors cursor-pointer px-3">✕</button>
-                    </td>
-                </tr>`;
+                <div class="border border-stone-200 rounded-xl p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-stone-50/50 hover:border-stone-300 transition-colors">
+                    
+                    <div class="flex-1 min-w-0 space-y-1">
+                        <div class="font-extrabold text-base md:text-lg text-stone-900 tracking-wide">
+                            組合 ${i+1}：${box.boxName} 
+                            <span class="text-sm font-normal text-stone-500 ml-1">(+$${box.boxExtra})</span>
+                        </div>
+                        <div class="text-sm text-[#5B7290] font-bold md:pl-3 leading-relaxed break-words">
+                            內含口味：${flavorDetailHtml} <span class="text-stone-400 font-medium">(共 ${box.totalQty} 個)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between md:justify-end gap-6 pt-3 md:pt-0 border-t md:border-t-0 border-stone-200/60 shrink-0">
+                        <div class="text-right">
+                            <span class="text-xs text-stone-400 block md:hidden">小計</span>
+                            <span class="font-black text-lg text-stone-950">$${box.boxTotalCost}</span>
+                        </div>
+                        <button type="button" onclick="removeFromCart(${i})" class="bg-stone-100 hover:bg-red-50 text-stone-400 hover:text-red-500 p-2 rounded-lg transition-colors cursor-pointer w-9 h-9 flex items-center justify-center font-bold text-base">
+                            ✕
+                        </button>
+                    </div>
+                    
+                </div>`;
             }).join('');
+            
             calculateTotal();
         }
 
