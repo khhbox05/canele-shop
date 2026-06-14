@@ -21,8 +21,9 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbwbbwSO3VsgZdMZZ9NeVrp6T7Zkqla6GAq5Ge9LsKkcCoo_T1LnjO0wLS1XCBOAgOO_pQ/exec";
         let shippingFee = 160; 
         let cart = []; 
-        let localProducts = [];
+        let localProducts = []; 
         let localPackaging = [];
+        let currentBoxLimit = null; // 當前選擇盒子的限制數量
     </script>
 
     <nav class="bg-[#5B7290] text-white p-5 shadow-sm sticky top-0 z-50">
@@ -44,20 +45,26 @@
                 <h3 class="text-lg font-extrabold text-[#5B7290] tracking-widest border-b-2 border-stone-100 pb-3.5 mb-2 uppercase">Step 01. 客製化您的禮盒組合</h3>
                 
                 <div>
-                    <label class="block text-sm font-black uppercase tracking-wider text-stone-700 mb-2">1. 請先挑選這盒要使用的包裝盒型 *</label>
+                    <div class="flex justify-between items-baseline mb-2">
+                        <label class="block text-sm font-black uppercase tracking-wider text-stone-700">1. 請先挑選這盒要使用的包裝盒型 *</label>
+                        <span id="boxLimitTip" class="text-sm font-bold text-[#5B7290]"></span>
+                    </div>
                     <select id="boxSelect" class="w-full p-4 border border-stone-300 rounded-xl bg-stone-50 focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] text-base font-bold cursor-pointer h-14" onchange="handleBoxChange()">
                         <option value="">載入中...</option>
                     </select>
                 </div>
 
                 <div id="flavorSection" class="hidden space-y-4 pt-4 border-t border-stone-100">
-                    <label class="block text-sm font-black uppercase tracking-wider text-[#5B7290] mb-2">2. 請挑選要放入此盒的可麗露口味與數量：</label>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-sm font-black uppercase tracking-wider text-[#5B7290]">2. 請挑選要放入此盒的可麗露口味與數量：</label>
+                        <span id="currentBoxCountDisplay" class="text-base font-black text-stone-700">當前已選: 0 個</span>
+                    </div>
                     <div id="flavorMenu" class="space-y-2">
                         </div>
                     
                     <div class="pt-4">
                         <button type="button" onclick="packBoxToCart()" class="w-full bg-[#5B7290] text-white font-extrabold tracking-widest p-4 rounded-xl hover:bg-[#3E4F66] transition-colors text-base uppercase shadow-sm cursor-pointer">
-                            📦 確認此盒口味，打包放入購物車
+                            確認此盒口味，打包放入購物車
                         </button>
                     </div>
                 </div>
@@ -141,7 +148,6 @@
     </main>
 
     <script>
-        // 核心邏輯保持與上一版即時虛擬扣庫存版完全一致，僅移除了對文字設定的讀取填入
         function toggleAddress() {
             const method = document.getElementById('shipMethod').value;
             const addrGroup = document.getElementById('addressGroup');
@@ -233,32 +239,90 @@
                         <span class="text-xs ${isOut ? 'text-red-500 font-bold' : 'text-stone-400'}">
                             剩餘：${virtualStock >= 0 ? virtualStock : 0} 顆 ${isOut ? '(售罄)' : ''}
                         </span>
-                        <input type="number" id="flavorQty_${idx}" data-[#idx]="${idx}" min="0" max="${virtualStock >= 0 ? virtualStock : 0}" value="0" ${isOut ? 'disabled' : ''} class="flavor-input w-16 p-2 border border-stone-300 rounded-xl text-center text-base font-bold bg-white focus:outline-none h-10 disabled:bg-stone-100 disabled:text-stone-400">
+                        <input type="number" id="flavorQty_${idx}" data-[#idx]="${idx}" min="0" max="${virtualStock >= 0 ? virtualStock : 0}" value="0" ${isOut ? 'disabled' : ''} class="flavor-input w-16 p-2 border border-stone-300 rounded-xl text-center text-base font-bold bg-white focus:outline-none h-10 disabled:bg-stone-100 disabled:text-stone-400" onchange="calculateCurrentBoxTotal()">
                     </div>
                 </div>`;
             }).join('');
         }
 
+        // 💡 核心功能：當使用者換盒子時，自動提取文字中的數字（例如 8入禮盒 ➡️ 8）
         function handleBoxChange() {
             const boxSelect = document.getElementById('boxSelect');
             const fSection = document.getElementById('flavorSection');
+            const boxLimitTip = document.getElementById('boxLimitTip');
+            
             if(boxSelect.value !== "") {
                 fSection.classList.remove('hidden');
+                
+                // 正則表達式抓取文字中的連續數字
+                const match = boxSelect.value.match(/\d+/);
+                if (match) {
+                    currentBoxLimit = parseInt(match[0]);
+                    boxLimitTip.innerText = `此包裝限制容量：${currentBoxLimit} 個`;
+                } else {
+                    currentBoxLimit = null; // 代表不限容量（如單顆自用袋裝）
+                    boxLimitTip.innerText = "此包裝不限制容量";
+                }
             } else {
                 fSection.classList.add('hidden');
+                boxLimitTip.innerText = "";
+                currentBoxLimit = null;
             }
+            
+            // 換盒子時把輸入框歸零並重算
+            const inputs = document.querySelectorAll('.flavor-input');
+            inputs.forEach(input => input.value = "0");
+            calculateCurrentBoxTotal();
         }
 
+        // 💡 核心功能：即時監聽並更新當前這盒塞了幾個
+        function calculateCurrentBoxTotal() {
+            const inputs = document.querySelectorAll('.flavor-input');
+            let currentTotal = 0;
+            inputs.forEach(input => {
+                currentTotal += parseInt(input.value) || 0;
+            });
+
+            const display = document.getElementById('currentBoxCountDisplay');
+            if (currentBoxLimit) {
+                display.innerText = `當前已選: ${currentTotal} / ${currentBoxLimit} 個`;
+                
+                // 動態限制 max 上限，不讓使用者往上按超過空位
+                inputs.forEach(input => {
+                    const idx = parseInt(input.getAttribute('data-[#idx]'));
+                    const product = localProducts[idx];
+                    
+                    let occupiedInCart = 0;
+                    cart.forEach(savedBox => {
+                        const matchFlavor = savedBox.flavors.find(f => f.name === product.name);
+                        if (matchFlavor) occupiedInCart += matchFlavor.quantity;
+                    });
+                    const virtualStock = product.stock - occupiedInCart;
+                    
+                    const selfValue = parseInt(input.value) || 0;
+                    const leftSpaceInBox = currentBoxLimit - currentTotal;
+                    
+                    // 新的最大上限是「自身目前的量 + 盒子剩餘空位」或「虛擬庫存量」兩者取小的
+                    const newMax = Math.min(selfValue + leftSpaceInBox, virtualStock);
+                    input.max = newMax >= 0 ? newMax : 0;
+                });
+            } else {
+                display.innerText = `當前已選: ${currentTotal} 個`;
+            }
+            
+            return currentTotal;
+        }
+
+        // 打包禮盒加入購物車（新增盒容量精準限制防呆）
         function packBoxToCart() {
             const boxSelect = document.getElementById('boxSelect');
             const boxName = boxSelect.value;
             const boxExtra = parseInt(boxSelect.selectedOptions[0].getAttribute('data-extra')) || 0;
 
+            const inputs = document.querySelectorAll('.flavor-input');
             let boxFlavors = [];
             let totalFlavorsCountInBox = 0;
             let boxFlavorsCost = 0;
-
-            const inputs = document.querySelectorAll('.flavor-input');
             let hasError = false;
 
             for (let input of inputs) {
@@ -276,7 +340,7 @@
                     const virtualStock = product.stock - occupiedInCart;
 
                     if (qty > virtualStock) {
-                        alert(`❌ 庫存不足！\n「${product.name}」目前最多只能再填入 ${virtualStock >= 0 ? virtualStock : 0} 顆。`);
+                        alert(`庫存不足！「${product.name}」目前最多只能再填入 ${virtualStock >= 0 ? virtualStock : 0} 顆。`);
                         hasError = true;
                         break;
                     }
@@ -288,7 +352,17 @@
             }
 
             if (hasError) return;
-            if(totalFlavorsCountInBox === 0) { alert("這一盒裡面還沒有裝任何顆可麗露喔！"); return; }
+
+            if(totalFlavorsCountInBox === 0) {
+                alert("這一盒裡面還沒有裝任何顆可麗露喔！請先輸入口味數量。");
+                return;
+            }
+
+            // 💡 核心防呆：如果包裝名稱有指定限制數量，總和必須完全精準相等才放行
+            if (currentBoxLimit && totalFlavorsCountInBox !== currentBoxLimit) {
+                alert(`數量不符！您選擇的是「${boxName}」，這盒必須剛好裝滿 ${currentBoxLimit} 個品項。目前裝了 ${totalFlavorsCountInBox} 個，請調整後再打包。`);
+                return;
+            }
 
             cart.push({
                 boxName: boxName,
@@ -302,6 +376,8 @@
             alert(`成功打包第 ${cart.length} 盒放入明細！`);
             boxSelect.value = "";
             document.getElementById('flavorSection').classList.add('hidden');
+            document.getElementById('boxLimitTip').innerText = "";
+            currentBoxLimit = null;
             
             renderFlavorMenu();
             renderCart();
@@ -325,8 +401,8 @@
                 return `
                 <tr class="text-stone-700">
                     <td class="py-4 pr-3">
-                        <div class="font-extrabold text-base text-stone-900 tracking-wide">📦 組合 ${i+1}：${box.boxName} (+$${box.boxExtra})</div>
-                        <div class="text-sm text-[#5B7290] font-bold mt-1 pl-4">👉 內含口味：${flavorDetailHtml} (共 ${box.totalQty} 顆)</div>
+                        <div class="font-extrabold text-base text-stone-900 tracking-wide">組合 ${i+1}：${box.boxName} (+$${box.boxExtra})</div>
+                        <div class="text-sm text-[#5B7290] font-bold mt-1 pl-4">內含口味：${flavorDetailHtml} (共 ${box.totalQty} 顆)</div>
                     </td>
                     <td class="py-4 text-right font-black text-base text-stone-900">$${box.boxTotalCost}</td>
                     <td class="py-4 text-center">
@@ -383,7 +459,7 @@
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(orderData) });
                 const result = await res.json();
                 if(result.status === "success") {
-                    alert("🎉 預購單送出成功！已為您保留數量。");
+                    alert("預購單送出成功！已為您保留數量。");
                     cart = [];
                     document.getElementById('orderForm').reset();
                     document.getElementById('addressGroup').classList.add('hidden');
