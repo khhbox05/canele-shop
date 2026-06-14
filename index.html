@@ -25,8 +25,9 @@
         let localCoupons = []; 
         let currentBoxLimit = null; 
 
-        // 💡 調整：改為儲存從試算表撈過來的固定日期陣列
-        let localAvailableDates = []; 
+        // 💡 分開儲存自取與宅配的日期陣列
+        let localPickupDates = []; 
+        let localDeliveryDates = []; 
         let appliedCoupon = null; 
     </script>
 
@@ -162,24 +163,23 @@
                 shipFeeDisplay.classList.add('hidden');
                 dateLabel.innerText = "門市自取日期 *";
             }
-            // 💡 直接渲染從試算表設定好的那排日期
-            renderAvailableDates();
+            // 💡 依據配送方式，各自選用對應的日期清單進行渲染
+            renderAvailableDates(method);
             calculateTotal();
         }
 
-        // 💡 核心優化：直接將 available_dates 拆開並渲染至下拉選單中
-        function renderAvailableDates() {
+        // 💡 修正後排版：精準切割並顯示各自專屬的日期
+        function renderAvailableDates(method) {
             const dateSelect = document.getElementById('shipDate');
-            const method = document.getElementById('shipMethod').value;
             const textPrompt = method === 'delivery' ? '希望到貨日期' : '自取日期';
+            const targetDates = method === 'delivery' ? localDeliveryDates : localPickupDates;
             
             let optionsHtml = `<option value="" disabled selected>-- 請選擇${textPrompt} --</option>`;
             
-            if(localAvailableDates.length > 0) {
-                localAvailableDates.forEach(dateStr => {
+            if(targetDates && targetDates.length > 0 && targetDates[0] !== "") {
+                targetDates.forEach(dateStr => {
                     const cleanDate = dateStr.trim();
                     if(cleanDate !== "") {
-                        // 嘗試抓取星期幾讓介面更精緻
                         let weekdayStr = "";
                         try {
                             const parsedDate = new Date(cleanDate);
@@ -205,9 +205,14 @@
                 localPackaging = data.packaging;
                 localCoupons = data.coupons || []; 
                 
-                // 💡 核心解析：抓取 available_dates 字串並用逗號切開成陣列
-                if(data.settings && data.settings.available_dates) {
-                    localAvailableDates = data.settings.available_dates.split(',');
+                // 💡 核心修正：各自切開自取與宅配的專屬字串
+                if(data.settings) {
+                    if(data.settings.pickup_available_dates) {
+                        localPickupDates = data.settings.pickup_available_dates.split(',');
+                    }
+                    if(data.settings.delivery_available_dates) {
+                        localDeliveryDates = data.settings.delivery_available_dates.split(',');
+                    }
                 }
 
                 const boxSelect = document.getElementById('boxSelect');
