@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lilou 預購系統</title>
+    <title>Lilou 可麗露預購</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         :root {
@@ -21,13 +21,13 @@
         const API_URL = "https://script.google.com/macros/s/AKfycbwbbwSO3VsgZdMZZ9NeVrp6T7Zkqla6GAq5Ge9LsKkcCoo_T1LnjO0wLS1XCBOAgOO_pQ/exec";
         let shippingFee = 160; 
         let cart = []; 
-        let localProducts = []; // 原始從雲端抓下來的固定庫存資料
+        let localProducts = [];
         let localPackaging = [];
     </script>
 
     <nav class="bg-[#5B7290] text-white p-5 shadow-sm sticky top-0 z-50">
         <div class="max-w-3xl mx-auto flex justify-between items-center">
-            <h1 id="txtShopName" class="text-2xl font-bold tracking-widest">Lilou</h1>
+            <h1 class="text-2xl font-bold tracking-widest">Lilou</h1>
             <span class="text-sm border border-white/40 px-4 py-1.5 rounded-full text-white/90 tracking-wider font-medium">ONLINE SHOP</span>
         </div>
     </nav>
@@ -36,8 +36,8 @@
         
         <section class="space-y-8">
             <div class="text-center py-4">
-                <h2 id="txtMainTitle" class="text-4xl font-black text-[#222222] tracking-wider mb-4">Lilou</h2>
-                <p id="txtSubTitle" class="text-stone-600 text-base md:text-lg tracking-wide max-w-xl mx-auto leading-relaxed">網頁簡介載入中...</p>
+                <h2 class="text-4xl font-black text-[#222222] tracking-wider mb-4">本週限量可麗露預購</h2>
+                <p class="text-stone-600 text-base md:text-lg tracking-wide max-w-xl mx-auto leading-relaxed">客製化挑選您的精緻禮盒，每週限量供應，手速要快！</p>
             </div>
 
             <div class="bg-white p-5 md:p-10 rounded-2xl shadow-xs border border-stone-100 space-y-6">
@@ -141,6 +141,7 @@
     </main>
 
     <script>
+        // 核心邏輯保持與上一版即時虛擬扣庫存版完全一致，僅移除了對文字設定的讀取填入
         function toggleAddress() {
             const method = document.getElementById('shipMethod').value;
             const addrGroup = document.getElementById('addressGroup');
@@ -193,24 +194,16 @@
                 localPackaging = data.packaging;
                 
                 let rawDateSetting = "";
-
                 if(data.settings) {
-                    document.getElementById('txtShopName').innerText = data.settings.shop_name || "Lilou";
-                    document.getElementById('txtMainTitle').innerText = data.settings.main_title || "Lilou 可麗露預購";
-                    document.getElementById('txtSubTitle').innerText = data.settings.sub_title || "客製化挑選您的精緻禮盒";
-                    document.title = data.settings.main_title || "Lilou 可麗露預購";
                     rawDateSetting = data.settings.available_dates || "";
                 }
 
-                // 1. 內置大盒子選單
                 const boxSelect = document.getElementById('boxSelect');
                 boxSelect.innerHTML = `<option value="" disabled selected>-- 請選擇這一個禮盒的包裝樣式 --</option>` + localPackaging.map(p => 
                     `<option value="${p.name}" data-extra="${p.extra_price}">${p.name} (+$${p.extra_price})</option>`
                 ).join('');
 
                 parseAndRenderCustomDates(rawDateSetting);
-                
-                // 💡 2. 獨立抽出核心口味選單渲染
                 renderFlavorMenu();
                 renderCart();
             } catch (err) {
@@ -218,19 +211,15 @@
             }
         }
 
-        // 💡 重大核心改進：動態計算購物車扣除後的「即時虛擬庫存菜單」
         function renderFlavorMenu() {
             const fMenu = document.getElementById('flavorMenu');
-            
             fMenu.innerHTML = localProducts.map((p, idx) => {
-                // 計算購物車內所有打包好的盒子，目前共霸佔了此口味幾顆
                 let occupiedInCart = 0;
                 cart.forEach(savedBox => {
                     const matchFlavor = savedBox.flavors.find(f => f.name === p.name);
                     if (matchFlavor) occupiedInCart += matchFlavor.quantity;
                 });
 
-                // 🌟 即時算出剩餘動態虛擬庫存
                 const virtualStock = p.stock - occupiedInCart;
                 const isOut = virtualStock <= 0;
 
@@ -278,7 +267,6 @@
                     const idx = parseInt(input.getAttribute('data-[#idx]'));
                     const product = localProducts[idx];
 
-                    // 重新檢查一次避免漏洞
                     let occupiedInCart = 0;
                     cart.forEach(savedBox => {
                         const matchFlavor = savedBox.flavors.find(f => f.name === product.name);
@@ -293,23 +281,14 @@
                         break;
                     }
 
-                    boxFlavors.push({
-                        name: product.name,
-                        price: product.price,
-                        quantity: qty
-                    });
-
+                    boxFlavors.push({ name: product.name, price: product.price, quantity: qty });
                     totalFlavorsCountInBox += qty;
                     boxFlavorsCost += (product.price * qty);
                 }
             }
 
             if (hasError) return;
-
-            if(totalFlavorsCountInBox === 0) {
-                alert("這一盒裡面還沒有裝任何顆可麗露喔！請先輸入口味數量。");
-                return;
-            }
+            if(totalFlavorsCountInBox === 0) { alert("這一盒裡面還沒有裝任何顆可麗露喔！"); return; }
 
             cart.push({
                 boxName: boxName,
@@ -321,19 +300,15 @@
             });
 
             alert(`成功打包第 ${cart.length} 盒放入明細！`);
-
-            // 重置
             boxSelect.value = "";
             document.getElementById('flavorSection').classList.add('hidden');
             
-            // 💡 打包完畢後，立刻重新動態計算並刷新上方的商品庫存選單！
             renderFlavorMenu();
             renderCart();
         }
 
         function removeFromCart(cartIdx) {
             cart.splice(cartIdx, 1);
-            // 💡 購物車刪除某一盒時，庫存釋放，立刻同步刷新上方的庫存選單！
             renderFlavorMenu();
             renderCart();
         }
@@ -413,7 +388,7 @@
                     document.getElementById('orderForm').reset();
                     document.getElementById('addressGroup').classList.add('hidden');
                     document.getElementById('shipFeeDisplay').classList.add('hidden');
-                    fetchOptions(); // 重新向試算表同步真正扣除後的雲端庫存
+                    fetchOptions(); 
                 }
             } catch(err) { alert("送出訂單時發生錯誤，請稍後再試。"); }
         }
