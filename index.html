@@ -18,6 +18,7 @@
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbwFoJujmX7VAFvTj2ZY2e5uHoLmx8cPpetCjSM425NORplAKVObzBHSAodhYHwBBx-e/exec";
+        
         let shippingFee = 160; 
         let cart = []; 
         let localProducts = []; 
@@ -513,7 +514,7 @@
                     document.getElementById('addressGroup').classList.add('hidden');
                     document.getElementById('shipFeeDisplay').classList.add('hidden');
                     
-                    // ⭕ 補全修正：下單成功後，連同 Step 01 客製化區域也一併完美隱藏初始化
+                    // ⭕ 補全重置：下單成功後，連同 Step 01 客製化區域也完美初始化歸零
                     document.getElementById('boxSelect').value = "";
                     document.getElementById('flavorSection').classList.add('hidden');
                     document.getElementById('boxLimitTip').innerText = "";
