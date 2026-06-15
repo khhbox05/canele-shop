@@ -272,7 +272,7 @@
             if(savedVal) boxSelect.value = savedVal;
             
             const packBtn = document.getElementById('packBtn');
-            packBtn.className = "w-full bg-[#5B7290] text-white font-extrabold tracking-widest h-12 md:h-14 rounded-xl hover:bg-[#3E4F66] transition-colors text-sm md:text-base uppercase shadow-xs cursor-pointer";
+            packBtn.className = "w-full bg-[#5B7290] text-white font-extrabold tracking-widest h-12 rounded-xl hover:bg-[#3E4F66] transition-colors text-sm md:text-base uppercase shadow-xs cursor-pointer";
             packBtn.innerText = "確定組合，打包放入購物車";
             packBtn.disabled = false;
             
@@ -284,6 +284,10 @@
 
         function renderFlavorMenu() {
             const fMenu = document.getElementById('flavorMenu');
+            const boxSelect = document.getElementById('boxSelect');
+            // 💡 防呆核心：檢查包裝選單是否處於未選取狀態
+            const isBoxNotSelected = (boxSelect.value === "");
+
             fMenu.innerHTML = localProducts.map((p, idx) => {
                 let occupiedInCart = 0;
                 cart.forEach(savedBox => {
@@ -291,18 +295,21 @@
                     if (matchFlavor) occupiedInCart += matchFlavor.quantity;
                 });
                 const virtualStock = p.stock - occupiedInCart;
-                const isOut = virtualStock <= 0;
+                
+                // 💡 防呆核心：如果庫存歸零，或是「根本還沒選擇包裝」，按鈕直接被強行鎖死（disabled）
+                const shouldDisable = virtualStock <= 0 || isBoxNotSelected;
+                
                 return `
                 <div class="flex items-center justify-between py-3 gap-2">
                     <div class="flex-1 min-w-0">
                         <span class="font-bold text-stone-900 text-sm md:text-base break-words block">${p.name}</span>
                         <span class="text-[#5B7290] font-black text-sm md:text-base">$${p.price}</span>
-                        <span class="text-[10px] md:text-xs ${isOut ? 'text-red-500 font-bold' : 'text-stone-400'} ml-0.5">剩 ${virtualStock >= 0 ? virtualStock : 0}</span>
+                        <span class="text-[10px] md:text-xs ${virtualStock <= 0 ? 'text-red-500 font-bold' : 'text-stone-400'} ml-0.5">剩 ${virtualStock >= 0 ? virtualStock : 0}</span>
                     </div>
-                    <div class="shrink-0 flex items-center bg-stone-100 rounded-xl p-0.5 border border-stone-200">
-                        <button type="button" onclick="stepFlavorQty(${idx}, -1)" ${isOut ? 'disabled' : ''} class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center font-black text-stone-600 hover:text-stone-900 bg-white rounded-lg shadow-2xs active:bg-stone-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm md:text-base">—</button>
+                    <div class="shrink-0 flex items-center bg-stone-100 rounded-xl p-0.5 border border-stone-200 ${isBoxNotSelected ? 'opacity-40 select-none' : ''}">
+                        <button type="button" onclick="stepFlavorQty(${idx}, -1)" ${shouldDisable ? 'disabled' : ''} class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center font-black text-stone-600 hover:text-stone-900 bg-white rounded-lg shadow-2xs active:bg-stone-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm md:text-base">—</button>
                         <input type="number" id="flavorQty_${idx}" data-idx="${idx}" min="0" max="${virtualStock >= 0 ? virtualStock : 0}" value="0" readonly class="flavor-input w-10 md:w-12 text-center text-sm md:text-base font-black bg-transparent border-0 focus:outline-none h-8 select-none pointer-events-none text-stone-800">
-                        <button type="button" id="plusBtn_${idx}" onclick="stepFlavorQty(${idx}, 1)" ${isOut ? 'disabled' : ''} class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center font-black text-stone-600 hover:text-stone-900 bg-white rounded-lg shadow-2xs active:bg-stone-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm md:text-base">＋</button>
+                        <button type="button" id="plusBtn_${idx}" onclick="stepFlavorQty(${idx}, 1)" ${shouldDisable ? 'disabled' : ''} class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center font-black text-stone-600 hover:text-stone-900 bg-white rounded-lg shadow-2xs active:bg-stone-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm md:text-base">＋</button>
                     </div>
                 </div>`;
             }).join('');
@@ -326,7 +333,10 @@
                 const match = boxSelect.value.match(/\d+/);
                 currentBoxLimit = match ? parseInt(match[0]) : null;
             } else { currentBoxLimit = null; }
+            
+            // 💡 防呆核心：包裝切換或選取成功時，立刻重新刷新口味選單的解鎖狀態
             document.querySelectorAll('.flavor-input').forEach(input => input.value = "0");
+            renderFlavorMenu();
             calculateCurrentBoxTotal(null); 
         }
 
@@ -360,7 +370,11 @@
                     if (allowedMax > virtualStock) allowedMax = virtualStock;
                     input.max = allowedMax >= 0 ? allowedMax : 0;
                 });
-            } else { display.innerText = `已選: ${currentTotal} 個`; }
+            } else { 
+                // 💡 防呆核心：還沒選包裝時，文字顯示提示
+                const boxSelect = document.getElementById('boxSelect');
+                display.innerText = boxSelect.value === "" ? "請先挑選包裝類型" : `已選: ${currentTotal} 個`; 
+            }
             return currentTotal;
         }
 
