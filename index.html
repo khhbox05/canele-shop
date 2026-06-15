@@ -43,8 +43,19 @@
 
     <nav class="bg-[#5B7290] text-white p-4 md:p-5 shadow-sm sticky top-0 z-50 backdrop-blur-md bg-opacity-95">
         <div class="max-w-3xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl md:text-2xl font-black tracking-widest">Lilou</h1>
-            <span class="text-xs md:text-sm border border-white/40 px-3.5 py-1 rounded-full text-white/90 tracking-wider font-medium">ONLINE SHOP</span>
+            
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 54" class="h-8 md:h-10 w-auto" fill="currentColor">
+                    <path d="M12 11h14v2.5h-5.5v22c0 3.1.6 4.3 3.5 4.3h5.5V43H12v-2.5h2.5V13.5H12V11z"/>
+                    <circle cx="34.5" cy="13.5" r="3"/>
+                    <path d="M30 20h9v2.5h-3.2v15.3h3.2V40h-9v-2.2h3.2V22.5H30V20z"/>
+                    <path d="M46 11h11v2.5h-3.2v24.3h3.2V40h-11v-2.2h3.2V13.5H46V11z"/>
+                    <path d="M78.5 19.5c7.2 0 12.5 5 12.5 10.8s-5.3 10.7-12.5 10.7S66 36.1 66 30.3s5.3-10.8 12.5-10.8zm0 2.8c-4.5 0-7.2 3.6-7.2 8s2.7 8 7.2 8 7.2-3.6 7.2-8-2.7-8-7.2-8z"/>
+                    <path d="M98 20h9v2.5h-2.5v10.5c0 3.2 1.6 5 4.8 5s4.7-1.8 4.7-5V22.5H111V20h9v2.5h-2.5v15.3h2.5V40h-8.5v-2.5h.3c.5 0 .7-.3.7-.8v-2.8c-1.3 2.5-4 4.1-7.5 4.1-5.5 0-8.5-3.5-8.5-8.5V22.5H98V20z"/>
+                </svg>
+            </div>
+
+            <span class="text-xs md:text-sm border border-white/40 px-3.5 py-1 rounded-full text-white/90 tracking-wider font-medium shrink-0">ONLINE SHOP</span>
         </div>
     </nav>
 
@@ -286,7 +297,7 @@
             if(savedVal) boxSelect.value = savedVal;
             
             const packBtn = document.getElementById('packBtn');
-            packBtn.className = "w-full bg-[#5B7290] text-white font-extrabold tracking-widest h-12 rounded-xl hover:bg-[#3E4F66] transition-colors text-sm md:text-base uppercase shadow-xs cursor-pointer";
+            packBtn.className = "w-full bg-[#5B7290] text-white font-extrabold tracking-widest h-12 md:h-14 rounded-xl hover:bg-[#3E4F66] transition-colors text-sm md:text-base uppercase shadow-xs cursor-pointer";
             packBtn.innerText = "確定組合，打包放入購物車";
             packBtn.disabled = false;
             
