@@ -272,7 +272,7 @@
             if(savedVal) boxSelect.value = savedVal;
             
             const packBtn = document.getElementById('packBtn');
-            packBtn.className = "w-full bg-[#5B7290] text-white font-extrabold tracking-widest h-12 rounded-xl hover:bg-[#3E4F66] transition-colors text-sm md:text-base uppercase shadow-xs cursor-pointer";
+            packBtn.className = "w-full bg-[#5B7290] text-white font-extrabold tracking-widest h-12 md:h-14 rounded-xl hover:bg-[#3E4F66] transition-colors text-sm md:text-base uppercase shadow-xs cursor-pointer";
             packBtn.innerText = "確定組合，打包放入購物車";
             packBtn.disabled = false;
             
@@ -285,7 +285,6 @@
         function renderFlavorMenu() {
             const fMenu = document.getElementById('flavorMenu');
             const boxSelect = document.getElementById('boxSelect');
-            // 💡 防呆核心：檢查包裝選單是否處於未選取狀態
             const isBoxNotSelected = (boxSelect.value === "");
 
             fMenu.innerHTML = localProducts.map((p, idx) => {
@@ -295,8 +294,6 @@
                     if (matchFlavor) occupiedInCart += matchFlavor.quantity;
                 });
                 const virtualStock = p.stock - occupiedInCart;
-                
-                // 💡 防呆核心：如果庫存歸零，或是「根本還沒選擇包裝」，按鈕直接被強行鎖死（disabled）
                 const shouldDisable = virtualStock <= 0 || isBoxNotSelected;
                 
                 return `
@@ -323,6 +320,18 @@
             const maxStock = parseInt(input.max) || 0;
             if (newVal < 0) newVal = 0;
             if (newVal > maxStock) newVal = maxStock;
+            
+            // 💡 智慧防呆：只要商品名字裡有「單入」這兩個字，且選取包裝含有「袋」，直接進行精準攔截
+            if (change > 0) {
+                const boxSelect = document.getElementById('boxSelect');
+                const pName = localProducts[idx].name;
+                
+                if (boxSelect.value.includes("袋") && pName.includes("單入")) {
+                    alert(`【包裝限制】抱歉，標記為單入裝的點心因包裝限制不提供袋裝，請改選單包裝或禮盒。`);
+                    return; 
+                }
+            }
+
             input.value = newVal;
             calculateCurrentBoxTotal(input, idx, currentVal);
         }
@@ -330,13 +339,36 @@
         function handleBoxChange() {
             const boxSelect = document.getElementById('boxSelect');
             if(boxSelect.value !== "") {
-                const match = boxSelect.value.match(/\d+/);
-                currentBoxLimit = match ? parseInt(match[0]) : null;
+                const bVal = boxSelect.value;
+                // 💡 智慧繞過容量：如果名字裡有「單入」、「個別」或「免禮盒」，直接不設容量上限
+                if (bVal.includes("單入") || bVal.includes("個別") || bVal.includes("免禮盒")) {
+                    currentBoxLimit = null;
+                } else {
+                    const match = bVal.match(/\d+/);
+                    currentBoxLimit = match ? parseInt(match[0]) : null;
+                }
             } else { currentBoxLimit = null; }
             
-            // 💡 防呆核心：包裝切換或選取成功時，立刻重新刷新口味選單的解鎖狀態
-            document.querySelectorAll('.flavor-input').forEach(input => input.value = "0");
+            // 💡 智慧防呆：如果客人先加了數量，隨後把包裝切換成「袋裝」
+            if (boxSelect.value.includes("袋")) {
+                let hasViolation = false;
+                localProducts.forEach((p, idx) => {
+                    const qtyInput = document.getElementById(`flavorQty_${idx}`);
+                    if (qtyInput && parseInt(qtyInput.value) > 0) {
+                        if (p.name.includes("單入")) {
+                            hasViolation = true;
+                        }
+                    }
+                });
+                if (hasViolation) {
+                    alert("【包裝限制】目前已選口味中包含單入點心，無法使用袋裝！系統已為您重設數量，請重新挑選包裝。");
+                    document.querySelectorAll('.flavor-input').forEach(input => input.value = "0");
+                }
+            }
+
+            document.querySelectorAll('.flavor-input').forEach(input => { if(boxSelect.value === "") input.value = "0"; });
             renderFlavorMenu();
+            calculateTotal();
             calculateCurrentBoxTotal(null); 
         }
 
@@ -371,7 +403,6 @@
                     input.max = allowedMax >= 0 ? allowedMax : 0;
                 });
             } else { 
-                // 💡 防呆核心：還沒選包裝時，文字顯示提示
                 const boxSelect = document.getElementById('boxSelect');
                 display.innerText = boxSelect.value === "" ? "請先挑選包裝類型" : `已選: ${currentTotal} 個`; 
             }
