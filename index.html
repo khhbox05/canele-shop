@@ -286,6 +286,12 @@
             const fMenu = document.getElementById('flavorMenu');
             const boxSelect = document.getElementById('boxSelect');
             const isBoxNotSelected = (boxSelect.value === "");
+            
+            // 💡 讀取目前包裝名稱與狀態
+            const bName = boxSelect.value;
+            const isBagSelected = bName.includes("袋");
+            // 偵測是否選取了特定的單入盒包裝（費南雪、大可麗露）
+            const isSingleBoxSelected = bName.includes("費南雪") || bName.includes("大可麗露");
 
             fMenu.innerHTML = localProducts.map((p, idx) => {
                 let occupiedInCart = 0;
@@ -294,16 +300,31 @@
                     if (matchFlavor) occupiedInCart += matchFlavor.quantity;
                 });
                 const virtualStock = p.stock - occupiedInCart;
-                const shouldDisable = virtualStock <= 0 || isBoxNotSelected;
+                
+                // 💡 智慧防呆聯動邏輯切換：
+                let isViolation = false;
+                let statusText = '剩 ' + (virtualStock >= 0 ? virtualStock : 0);
+
+                if (isBagSelected && p.name.includes("單入")) {
+                    // 1. 如果包裝是袋裝，禁止點選帶有「單入」的品項
+                    isViolation = true;
+                    statusText = '不提供袋裝';
+                } else if (isSingleBoxSelected && !p.name.includes("單入")) {
+                    // 2. 如果包裝選到費南雪/大可麗露，只能選「單入」品項，一般品項全部封鎖
+                    isViolation = true;
+                    statusText = '限單入品項';
+                }
+
+                const shouldDisable = virtualStock <= 0 || isBoxNotSelected || isViolation;
                 
                 return `
                 <div class="flex items-center justify-between py-3 gap-2">
-                    <div class="flex-1 min-w-0">
+                    <div class="flex-1 min-w-0 ${isViolation ? 'opacity-30' : ''}">
                         <span class="font-bold text-stone-900 text-sm md:text-base break-words block">${p.name}</span>
                         <span class="text-[#5B7290] font-black text-sm md:text-base">$${p.price}</span>
-                        <span class="text-[10px] md:text-xs ${virtualStock <= 0 ? 'text-red-500 font-bold' : 'text-stone-400'} ml-0.5">剩 ${virtualStock >= 0 ? virtualStock : 0}</span>
+                        <span class="text-[10px] md:text-xs ${virtualStock <= 0 ? 'text-red-500 font-bold' : 'text-stone-400'} ml-0.5">${statusText}</span>
                     </div>
-                    <div class="shrink-0 flex items-center bg-stone-100 rounded-xl p-0.5 border border-stone-200 ${isBoxNotSelected ? 'opacity-40 select-none' : ''}">
+                    <div class="shrink-0 flex items-center bg-stone-100 rounded-xl p-0.5 border border-stone-200 ${(isBoxNotSelected || shouldDisable) ? 'opacity-30 select-none' : ''}">
                         <button type="button" onclick="stepFlavorQty(${idx}, -1)" ${shouldDisable ? 'disabled' : ''} class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center font-black text-stone-600 hover:text-stone-900 bg-white rounded-lg shadow-2xs active:bg-stone-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm md:text-base">—</button>
                         <input type="number" id="flavorQty_${idx}" data-idx="${idx}" min="0" max="${virtualStock >= 0 ? virtualStock : 0}" value="0" readonly class="flavor-input w-10 md:w-12 text-center text-sm md:text-base font-black bg-transparent border-0 focus:outline-none h-8 select-none pointer-events-none text-stone-800">
                         <button type="button" id="plusBtn_${idx}" onclick="stepFlavorQty(${idx}, 1)" ${shouldDisable ? 'disabled' : ''} class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center font-black text-stone-600 hover:text-stone-900 bg-white rounded-lg shadow-2xs active:bg-stone-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm md:text-base">＋</button>
@@ -321,17 +342,6 @@
             if (newVal < 0) newVal = 0;
             if (newVal > maxStock) newVal = maxStock;
             
-            // 💡 智慧防呆：只要商品名字裡有「單入」這兩個字，且選取包裝含有「袋」，直接進行精準攔截
-            if (change > 0) {
-                const boxSelect = document.getElementById('boxSelect');
-                const pName = localProducts[idx].name;
-                
-                if (boxSelect.value.includes("袋") && pName.includes("單入")) {
-                    alert(`【包裝限制】抱歉，標記為單入裝的點心因包裝限制不提供袋裝，請改選單包裝或禮盒。`);
-                    return; 
-                }
-            }
-
             input.value = newVal;
             calculateCurrentBoxTotal(input, idx, currentVal);
         }
@@ -340,7 +350,6 @@
             const boxSelect = document.getElementById('boxSelect');
             if(boxSelect.value !== "") {
                 const bVal = boxSelect.value;
-                // 💡 智慧繞過容量：如果名字裡有「單入」、「個別」或「免禮盒」，直接不設容量上限
                 if (bVal.includes("單入") || bVal.includes("個別") || bVal.includes("免禮盒")) {
                     currentBoxLimit = null;
                 } else {
@@ -349,25 +358,28 @@
                 }
             } else { currentBoxLimit = null; }
             
-            // 💡 智慧防呆：如果客人先加了數量，隨後把包裝切換成「袋裝」
-            if (boxSelect.value.includes("袋")) {
-                let hasViolation = false;
-                localProducts.forEach((p, idx) => {
-                    const qtyInput = document.getElementById(`flavorQty_${idx}`);
-                    if (qtyInput && parseInt(qtyInput.value) > 0) {
-                        if (p.name.includes("單入")) {
-                            hasViolation = true;
-                        }
+            // 💡 智慧即時檢查：判斷重新切換包裝時是否會與已填寫數量衝突
+            const bName = boxSelect.value;
+            let hasViolation = false;
+
+            localProducts.forEach((p, idx) => {
+                const qtyInput = document.getElementById(`flavorQty_${idx}`);
+                if (qtyInput && parseInt(qtyInput.value) > 0) {
+                    if (bName.includes("袋") && p.name.includes("單入")) {
+                        hasViolation = true;
+                    } else if ((bName.includes("費南雪") || bName.includes("大可麗露")) && !p.name.includes("單入")) {
+                        hasViolation = true;
                     }
-                });
-                if (hasViolation) {
-                    alert("【包裝限制】目前已選口味中包含單入點心，無法使用袋裝！系統已為您重設數量，請重新挑選包裝。");
-                    document.querySelectorAll('.flavor-input').forEach(input => input.value = "0");
                 }
+            });
+
+            if (hasViolation) {
+                alert("【包裝商品不符】當前選取的商品與新的包裝規格不符！系統已為您自動重設數量，請重新挑選甜點組合。");
+                document.querySelectorAll('.flavor-input').forEach(input => input.value = "0");
             }
 
             document.querySelectorAll('.flavor-input').forEach(input => { if(boxSelect.value === "") input.value = "0"; });
-            renderFlavorMenu();
+            renderFlavorMenu(); 
             calculateTotal();
             calculateCurrentBoxTotal(null); 
         }
