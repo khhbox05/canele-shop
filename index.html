@@ -88,7 +88,7 @@
                     </div>
                     
                     <div class="pt-2">
-                        <button type="button" onclick="packBoxToCart()" class="w-full bg-stone-300 text-white font-extrabold tracking-widest h-12 md:h-14 rounded-xl text-sm md:text-base uppercase shadow-xs cursor-not-allowed transition-all duration-200" id="packBtn" disabled>
+                        <button type="button" onclick="packBoxToCart()" class="w-full bg-stone-300 text-white font-extrabold tracking-widest h-12 rounded-xl text-sm md:text-base uppercase shadow-xs cursor-not-allowed transition-all duration-200" id="packBtn" disabled>
                             正在同步最新庫存中...
                         </button>
                     </div>
@@ -142,12 +142,12 @@
 
                     <div id="addressGroup" class="hidden transition-all duration-300 space-y-1.5">
                         <div class="flex justify-between items-center">
-                            <label id="addressLabel" class="block text-xs md:text-sm font-bold text-stone-600">7-11 取貨門市店名與 6 碼店號 *</label>
+                            <label id="addressLabel" class="block text-xs md:text-sm font-bold text-stone-600">7-11 取貨門市名稱 *</label>
                             <a href="https://emap.pcsc.com.tw/" target="_blank" class="text-xs font-bold text-emerald-600 hover:text-emerald-800 underline inline-flex items-center gap-0.5">
-                            開啟 7-11 門市地圖查詢
+                                開啟 7-11 門市地圖查詢
                             </a>
                         </div>
-                        <input type="text" id="custAddress" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50" placeholder="範例：Lilou門市 (店號 123456)">
+                        <input type="text" id="custAddress" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50" placeholder="範例：Lilou門市">
                     </div>
 
                     <div>
@@ -197,7 +197,8 @@
                 addrInput.required = true;
                 shipFeeDisplay.classList.remove('hidden');
                 shipFeeDisplay.querySelector('span').innerText = `+$${shippingFee}`;
-                dateLabel.innerText = "希望店到店到貨日期 *";
+                // 💡 已成功修改：只顯示「到貨日期 *」
+                dateLabel.innerText = "到貨日期 *";
             } else {
                 addrGroup.classList.add('hidden');
                 addrInput.required = false;
@@ -582,7 +583,6 @@
                 name: document.getElementById('custName').value, 
                 phone: document.getElementById('custPhone').value, 
                 date: document.getElementById('shipDate').value, 
-                // 💡 物流名稱標記修改，便於與 Google 試算表後台無縫對接
                 shipping_method: document.getElementById('shipMethod').value === 'store' ? "Store Pickup" : "7-11 Pickup", 
                 address: document.getElementById('custAddress').value, 
                 product_name: orderProductSummary, 
