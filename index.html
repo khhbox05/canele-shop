@@ -197,8 +197,7 @@
                 addrInput.required = true;
                 shipFeeDisplay.classList.remove('hidden');
                 shipFeeDisplay.querySelector('span').innerText = `+$${shippingFee}`;
-                // 💡 已成功修改：只顯示「到貨日期 *」
-                dateLabel.innerText = "到貨日期 *";
+                dateLabel.innerText = "希望到貨日期 *";
             } else {
                 addrGroup.classList.add('hidden');
                 addrInput.required = false;
