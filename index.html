@@ -29,6 +29,7 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzAIcNDGVm200Du_lGcAqV649dIqsLGDOLDkd6fWnUE1K7EA5sH-m2Z4RNdOVk4KKHB/exec";
         
+        // 冷凍運費為 129 元
         let shippingFee = 129; 
         let cart = []; 
         let localProducts = []; 
@@ -124,6 +125,7 @@
                             <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">配送方式 *</label>
                             <select id="shipMethod" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] cursor-pointer h-12 md:h-14 bg-stone-50/50" onchange="handleShippingMethodChange()" required>
                                 <option value="store">門市自取 (免運費)</option>
+                                <option value="delivery">7-11 店到店取貨 (冷凍運費另計)</option>
                             </select>
                         </div>
                         <div>
@@ -132,6 +134,16 @@
                                 <option value="" disabled selected>正在載入可用日期...</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div id="addressGroup" class="hidden transition-all duration-300 space-y-1.5">
+                        <div class="flex justify-between items-center">
+                            <label id="addressLabel" class="block text-xs md:text-sm font-bold text-stone-600">7-11 取貨門市名稱 *</label>
+                            <a href="https://emap.pcsc.com.tw/" target="_blank" class="text-xs font-bold text-emerald-600 hover:text-emerald-800 underline inline-flex items-center gap-0.5">
+                                開啟 7-11 門市地圖查詢
+                            </a>
+                        </div>
+                        <input type="text" id="custAddress" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50" placeholder="範例：Lilou門市">
                     </div>
 
                     <div>
@@ -153,6 +165,7 @@
 
                 <div class="bg-stone-50 p-4 md:p-6 rounded-xl space-y-1.5 text-right text-stone-500 text-xs md:text-sm tracking-wide border border-stone-100">
                     <div>商品總計 Subtotal: <span id="subtotalDisplay" class="font-bold text-stone-700 md:text-base">$0</span></div>
+                    <div id="shipFeeDisplay" class="hidden">7-11 冷凍運費 Shipping: <span class="font-bold text-stone-700 md:text-base">+$129</span></div>
                     <div id="couponDiscountDisplay" class="hidden text-red-500 font-bold">折扣折抵 Discount: <span class="md:text-base">-$0</span></div>
                     
                     <div class="text-[#222222] font-black text-xl md:text-2xl pt-2.5 border-t border-stone-200 mt-2">
@@ -170,18 +183,35 @@
     <script>
         function handleShippingMethodChange() {
             const method = document.getElementById('shipMethod').value;
+            const addrGroup = document.getElementById('addressGroup');
+            const addrInput = document.getElementById('custAddress');
+            const shipFeeDisplay = document.getElementById('shipFeeDisplay');
             const dateLabel = document.getElementById('dateLabel');
-            dateLabel.innerText = "門市自取日期 *";
+            
+            if(method === 'delivery') {
+                addrGroup.classList.remove('hidden');
+                addrInput.required = true;
+                shipFeeDisplay.classList.remove('hidden');
+                shipFeeDisplay.querySelector('span').innerText = `+$${shippingFee}`;
+                dateLabel.innerText = "希望到貨日期 *";
+            } else {
+                addrGroup.classList.add('hidden');
+                addrInput.required = false;
+                addrInput.value = "";
+                shipFeeDisplay.classList.add('hidden');
+                dateLabel.innerText = "門市自取日期 *";
+            }
             renderAvailableDates(method);
             calculateTotal();
         }
 
         function renderAvailableDates(method) {
             const dateSelect = document.getElementById('shipDate');
-            const targetDates = localPickupDates; 
-            let optionsHtml = `<option value="" disabled selected>-- 請選擇自取日期 --</option>`;
+            const textPrompt = method === 'delivery' ? '到貨日期' : '自取日期';
+            const targetDates = method === 'delivery' ? localDeliveryDates : localPickupDates;
+            let optionsHtml = `<option value="" disabled selected>-- 請選擇${textPrompt} --</option>`;
             
-            // 💡 限制下單後兩天後才可以自取：計算出後天的日期基準點（下單日 + 2天）
+            // 💡 限制下單後兩天後才可以自取/配送：計算出時間基準點（今天 + 2 天）
             const now = new Date();
             const minAllowedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
 
@@ -197,7 +227,7 @@
                         try {
                             const parsedDate = new Date(cleanDate);
                             if(!isNaN(parsedDate)) {
-                                // 💡 嚴格限制：如果該日期小於後天，直接設為不合法（不顯示出來）
+                                // 💡 嚴格限制：如果該日期小於基準點（今天與明天），直接判定為不合法
                                 if (parsedDate < minAllowedDate) {
                                     isDateValid = false;
                                 }
@@ -208,7 +238,7 @@
                             isDateValid = false;
                         }
 
-                        // 💡 只有符合兩天後的日期才會產生 <option>，不符合的直接隱藏（不輸出 HTML）
+                        // 💡 核心優化：不能選的太近日期，直接不產生 <option>，完全不在選單中顯示
                         if (isDateValid) {
                             optionsHtml += `<option value="${cleanDate}">${cleanDate}${weekdayStr}</option>`;
                             hasValidDate = true;
@@ -217,7 +247,7 @@
                 });
 
                 if (!hasValidDate) {
-                    optionsHtml = `<option value="" disabled selected>-- 暫無符合兩天後的自取日期 --</option>`;
+                    optionsHtml = `<option value="" disabled selected>-- 暫無符合兩天後的${textPrompt} --</option>`;
                 }
             } else {
                 optionsHtml += `<option value="" disabled>暫無可選日期</option>`;
@@ -257,6 +287,7 @@
             localCoupons = data.coupons || []; 
             if(data.settings) {
                 if(data.settings.pickup_available_dates) localPickupDates = data.settings.pickup_available_dates.toString().replace(/^"|"$/g, '').split(',');
+                if(data.settings.delivery_available_dates) localDeliveryDates = data.settings.delivery_available_dates.toString().replace(/^"|"$/g, '').split(',');
             }
             const boxSelect = document.getElementById('boxSelect');
             const savedVal = boxSelect.value;
@@ -519,7 +550,9 @@
         function calculateTotal() {
             let subtotal = 0; cart.forEach(box => { subtotal += box.boxTotalCost; });
             document.getElementById('subtotalDisplay').innerText = `$${subtotal}`;
+            const shipMethod = document.getElementById('shipMethod').value;
             let finalTotal = subtotal;
+            if(shipMethod === 'delivery') finalTotal += shippingFee;
             
             if (appliedCoupon) {
                 const minSpendRequirement = Number(appliedCoupon.min_spend) || 0;
@@ -571,8 +604,8 @@
                 name: document.getElementById('custName').value, 
                 phone: document.getElementById('custPhone').value, 
                 date: document.getElementById('shipDate').value, 
-                shipping_method: "Store Pickup", 
-                address: "", 
+                shipping_method: document.getElementById('shipMethod').value === 'store' ? "Store Pickup" : "7-11 Pickup", 
+                address: document.getElementById('custAddress').value, 
                 product_name: orderProductSummary, 
                 quantity: totalQtyAll, 
                 packaging_name: orderPackSummary, 
