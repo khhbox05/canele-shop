@@ -181,10 +181,9 @@
     </main>
 
     <script>
-        // 💡 防止 Enter 鍵誤觸送出表單的控制代碼
+        // 防止 Enter 鍵誤觸送出表單
         function preventEnterSubmit(e) {
             const keyCode = e.keyCode || e.which;
-            // 如果按下的是 Enter (13)，且當前焦點元件「不是」備註說明區 (textarea)，就阻擋它
             if (keyCode === 13 && e.target.tagName !== 'TEXTAREA') {
                 e.preventDefault();
                 return false;
@@ -202,8 +201,8 @@
             if(method === 'delivery') {
                 addrGroup.classList.remove('hidden');
                 addrInput.required = true;
-                shipFeeDisplay.classList.remove('hidden');
                 shipFeeDisplay.querySelector('span').innerText = `+$${shippingFee}`;
+                shipFeeDisplay.classList.remove('hidden');
                 dateLabel.innerText = "希望到貨日期 *";
             } else {
                 addrGroup.classList.add('hidden');
@@ -227,10 +226,10 @@
             
             let minAllowedDate = new Date(todayMidnight.getTime());
             if (method === 'delivery') {
-                // 💡 7-11 店到店取貨：只顯示今天 + 5 天之後的日期 
+                // 💡 7-11 店到店取貨：只顯示今天 + 5 天之後的日期
                 minAllowedDate.setDate(todayMidnight.getDate() + 5);
             } else {
-                // 💡 門市自取：只顯示今天 + 2 天（後天）之後的日期 
+                // 💡 門市自取：只顯示今天 + 2 天（後天）之後的日期
                 minAllowedDate.setDate(todayMidnight.getDate() + 2);
             }
 
@@ -259,7 +258,7 @@
                             isDateValid = false;
                         }
 
-                        // 不能選的日期通通直接隱藏 
+                        // 不能選的日期通通直接從下拉選單隱藏
                         if (isDateValid) {
                             optionsHtml += `<option value="${cleanDate}">${cleanDate}${weekdayStr}</option>`;
                             hasValidDate = true;
@@ -334,6 +333,7 @@
             const isBoxNotSelected = (boxSelect.value === "");
             const bName = boxSelect.value;
             
+            // 💡 修正關鍵一：定義所有的袋裝、提盒包裝判斷
             const isBagOrCarryBoxSelected = bName.includes("袋裝") || bName.includes("提盒") || bName.includes("袋");
 
             fMenu.innerHTML = localProducts.map((p, idx) => {
@@ -344,7 +344,7 @@
                 });
                 const virtualStock = p.stock - occupiedInCart;
                 
-                // 不符包裝設定的品項反灰不隱藏 
+                // 💡 修正關鍵二：當點選袋裝或提盒時，把名字包含「單入」的商品設為違規，反灰顯示
                 let isViolation = false;
                 let statusText = '剩 ' + (virtualStock >= 0 ? virtualStock : 0);
 
@@ -403,6 +403,7 @@
             const bName = boxSelect.value;
             let hasViolation = false;
 
+            // 💡 修正關鍵三：當切換包裝類型至袋裝或提盒時，連帶校驗目前已輸入欄位
             localProducts.forEach((p, idx) => {
                 const qtyInput = document.getElementById(`flavorQty_${idx}`);
                 if (qtyInput && parseInt(qtyInput.value) > 0) {
