@@ -181,7 +181,7 @@
     </main>
 
     <script>
-        // 防止 Enter 鍵誤觸送出表單的防呆機制
+        // 防止 Enter 鍵誤觸送出表單
         function preventEnterSubmit(e) {
             const keyCode = e.keyCode || e.which;
             if (keyCode === 13 && e.target.tagName !== 'TEXTAREA') {
@@ -256,7 +256,6 @@
                             isDateValid = false;
                         }
 
-                        // 不能選的日期通通直接從下拉選單隱藏
                         if (isDateValid) {
                             optionsHtml += `<option value="${cleanDate}">${cleanDate}${weekdayStr}</option>`;
                             hasValidDate = true;
@@ -331,6 +330,10 @@
             const isBoxNotSelected = (boxSelect.value === "");
             const bName = boxSelect.value;
 
+            // 💡 識別目前選定包裝的屬性
+            const isBoxWithFinancier = bName.includes("費南雪");
+            const isBoxWithCanelé = bName.includes("大顆");
+
             fMenu.innerHTML = localProducts.map((p, idx) => {
                 let occupiedInCart = 0;
                 cart.forEach(savedBox => {
@@ -339,17 +342,21 @@
                 });
                 const virtualStock = p.stock - occupiedInCart;
                 
-                // 💡 營運優化調整：不符合關鍵字設定的品項直接隱藏（return ''），減少手機版滑動負擔
+                // 💡 打造完美的雙向排他隱藏邏輯
                 let isHidden = false;
 
-                if (bName.includes("費南雪") && !p.name.includes("費南雪")) {
-                    isHidden = true;
-                } 
-                else if (bName.includes("大顆") && !p.name.includes("大顆")) {
-                    isHidden = true;
+                if (isBoxWithFinancier) {
+                    // 1. 如果包裝叫費南雪盒，只要商品名字「沒有費南雪」，直接隱藏
+                    if (!p.name.includes("費南雪")) isHidden = true;
+                } else if (isBoxWithCanelé) {
+                    // 2. 如果包裝叫大顆盒，只要商品名字「沒有大顆」，直接隱藏
+                    if (!p.name.includes("大顆")) isHidden = true;
+                } else {
+                    // 3. 關鍵修正：如果是其他包裝（普通包裝），商品名字內「包含費南雪」或「包含大顆」的都要隱藏！
+                    if (p.name.includes("費南雪") || p.name.includes("大顆")) isHidden = true;
                 }
 
-                // 💡 如果需要隱藏，直接不渲染該品項 HTML，介面維持最高流暢度
+                // 💡 如果符合隱藏條件，直接給予空字串，完全不渲染 HTML，手機版超流暢
                 if (isHidden) return '';
 
                 const shouldDisable = virtualStock <= 0 || isBoxNotSelected;
@@ -399,7 +406,7 @@
             const bName = boxSelect.value;
             let hasViolation = false;
 
-            // 切換盒型時進行連動校驗，若原本輸入了不符新盒型的內容，直接清空重選並過濾
+            // 💡 連動校驗修正：切換包裝類型時，不符合新盒型規則的甜點也必須觸發重設
             localProducts.forEach((p, idx) => {
                 const qtyInput = document.getElementById(`flavorQty_${idx}`);
                 if (qtyInput && parseInt(qtyInput.value) > 0) {
@@ -407,12 +414,14 @@
                         hasViolation = true;
                     } else if (bName.includes("大顆") && !p.name.includes("大顆")) {
                         hasViolation = true;
+                    } else if (!bName.includes("費南雪") && !bName.includes("大顆") && (p.name.includes("費南雪") || p.name.includes("大顆"))) {
+                        hasViolation = true;
                     }
                 }
             });
 
             if (hasViolation) {
-                alert("【包裝商品不符】已為您切換包裝選單。系統已自動清空您目前輸入的欄位，並將不符合的商品自動隱藏。");
+                alert("【包裝商品不符】已為您切換商品組合選單。系統已自動重設目前輸入的甜點欄位，並為您重新隱藏不適用的口味。");
                 document.querySelectorAll('.flavor-input').forEach(input => input.value = "0");
             }
 
