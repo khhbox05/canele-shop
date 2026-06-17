@@ -181,7 +181,7 @@
             const targetDates = localPickupDates; 
             let optionsHtml = `<option value="" disabled selected>-- 請選擇自取日期 --</option>`;
             
-            // 💡 限制下單後兩天後才可以自取：計算「後天」的午夜時間點 (下單日 + 2天)
+            // 💡 限制下單後兩天後才可以自取：計算出後天的日期基準點（下單日 + 2天）
             const now = new Date();
             const minAllowedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2);
 
@@ -197,7 +197,7 @@
                         try {
                             const parsedDate = new Date(cleanDate);
                             if(!isNaN(parsedDate)) {
-                                // 💡 防呆過濾：若試算表內的日期小於「後天」，則隱藏不渲染
+                                // 💡 嚴格限制：如果該日期小於後天，直接設為不合法（不顯示出來）
                                 if (parsedDate < minAllowedDate) {
                                     isDateValid = false;
                                 }
@@ -208,6 +208,7 @@
                             isDateValid = false;
                         }
 
+                        // 💡 只有符合兩天後的日期才會產生 <option>，不符合的直接隱藏（不輸出 HTML）
                         if (isDateValid) {
                             optionsHtml += `<option value="${cleanDate}">${cleanDate}${weekdayStr}</option>`;
                             hasValidDate = true;
@@ -281,7 +282,7 @@
             const isBoxNotSelected = (boxSelect.value === "");
             const bName = boxSelect.value;
             
-            // 💡 識別包裝類型：是否包含「袋裝」、「提盒」或「袋」
+            // 識別包裝類型：是否包含「袋裝」、「提盒」或「袋」
             const isBagOrCarryBoxSelected = bName.includes("袋裝") || bName.includes("提盒") || bName.includes("袋");
 
             fMenu.innerHTML = localProducts.map((p, idx) => {
@@ -292,28 +293,29 @@
                 });
                 const virtualStock = p.stock - occupiedInCart;
                 
-                let isViolation = false;
-                let statusText = '剩 ' + (virtualStock >= 0 ? virtualStock : 0);
+                let isHidden = false;
 
-                // 💡 排除獨立精裝品：如果是袋裝或提盒，只要名稱中「包含」單入，就判定違規禁止點選
+                // 若選了袋裝或提盒，且商品名稱帶有「單入」，直接將其從前台隱藏
                 if (isBagOrCarryBoxSelected && p.name.includes("單入")) {
-                    isViolation = true;
-                    statusText = '不提供此包裝';
+                    isHidden = true;
                 } 
-                // 💡 特殊單入盒包裝限制：如果選了特定多入盒包裝，名稱不含單入的商品則不給選
+                // 多入盒特定限制：若選了特定品項禮盒且非袋裝提盒，名稱不含「單入」的商品直接隱藏
                 else if ((bName.includes("費南雪") || bName.includes("大可麗露")) && !isBagOrCarryBoxSelected && !p.name.includes("單入")) {
-                    isViolation = true;
-                    statusText = '限單入品項';
+                    isHidden = true;
                 }
 
-                const shouldDisable = virtualStock <= 0 || isBoxNotSelected || isViolation;
+                // 如果不該顯示，直接回傳空字串不渲染
+                if (isHidden) return '';
+
+                const shouldDisable = virtualStock <= 0 || isBoxNotSelected;
+                let statusText = '剩 ' + (virtualStock >= 0 ? virtualStock : 0);
                 
                 return `
                 <div class="flex items-center justify-between py-3 gap-2">
-                    <div class="flex-1 min-w-0 ${isViolation ? 'opacity-30' : ''}">
+                    <div class="flex-1 min-w-0">
                         <span class="font-bold text-stone-900 text-sm md:text-base break-words block">${p.name}</span>
                         <span class="text-[#5B7290] font-black text-sm md:text-base">$${p.price}</span>
-                        <span class="text-[10px] md:text-xs ${virtualStock <= 0 ? 'text-red-500 font-bold' : (isViolation ? 'text-amber-600 font-medium' : 'text-stone-400')} ml-0.5">${statusText}</span>
+                        <span class="text-[10px] md:text-xs ${virtualStock <= 0 ? 'text-red-500 font-bold' : 'text-stone-400'} ml-0.5">${statusText}</span>
                     </div>
                     <div class="shrink-0 flex items-center bg-stone-100 rounded-xl p-0.5 border border-stone-200 ${(isBoxNotSelected || shouldDisable) ? 'opacity-30 select-none' : ''}">
                         <button type="button" onclick="stepFlavorQty(${idx}, -1)" ${shouldDisable ? 'disabled' : ''} class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center font-black text-stone-600 hover:text-stone-900 bg-white rounded-lg shadow-2xs active:bg-stone-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm md:text-base">—</button>
@@ -352,7 +354,6 @@
             const bName = boxSelect.value;
             let hasViolation = false;
 
-            // 💡 即時阻擋：若使用者先點了單入商品，又切換到袋裝/提盒，則觸發自動清空防呆
             localProducts.forEach((p, idx) => {
                 const qtyInput = document.getElementById(`flavorQty_${idx}`);
                 if (qtyInput && parseInt(qtyInput.value) > 0) {
@@ -363,7 +364,7 @@
             });
 
             if (hasViolation) {
-                alert("【包裝商品不符】「袋裝 / 提盒」是用來裝沒有獨立包裝的散裝甜點喔！系統已自動重設目前清單，請避開名稱有「單入」的商品。");
+                alert("【包裝商品不符】已為您切換至「袋裝 / 提盒」散裝模式。系統已自動清空您目前輸入的欄位，並將「單入」商品從清單隱藏。");
                 document.querySelectorAll('.flavor-input').forEach(input => input.value = "0");
             }
 
@@ -392,6 +393,7 @@
                 inputs.forEach(input => {
                     const idx = parseInt(input.getAttribute('data-idx'));
                     const product = localProducts[idx];
+                    if (!product) return; 
                     let occupiedInCart = 0;
                     cart.forEach(savedBox => {
                         const matchFlavor = savedBox.flavors.find(f => f.name === product.name);
@@ -577,7 +579,6 @@
                 total_price: calculateTotal(), 
                 note: document.getElementById('orderNote').value,
                 coupon_code: appliedCoupon ? appliedCoupon.code : "",
-                // 💡 前端傳遞結構化購物車資訊，供後端進行防重複扣減與超賣嚴格檢查
                 cart_json: JSON.stringify(cart) 
             };
 
