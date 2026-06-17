@@ -40,6 +40,11 @@
         let localPickupDates = []; 
         let localDeliveryDates = []; 
         let appliedCoupon = null; 
+
+        // 倒數計時與取消用的全域變數（已升級為 5 秒緩衝）
+        let submissionTimeout = null;
+        let submissionInterval = null;
+        let countdownSeconds = 5;
     </script>
 
     <nav class="bg-[#5B7290] text-white p-4 md:p-5 shadow-sm sticky top-0 z-50 backdrop-blur-md bg-opacity-95">
@@ -73,7 +78,7 @@
                 <div id="flavorSection" class="space-y-4 pt-3 border-t border-stone-100">
                     <div class="flex justify-between items-center">
                         <label class="block text-xs md:text-sm font-bold uppercase tracking-wider text-stone-600">2. 請挑選組合內口味與數量：</label>
-                        <span id="currentBoxCountDisplay" class="text-xs md:text-sm font-black text-stone-700 bg-stone-100 px-2 py-1 rounded-md">準備中...</span>
+                        <span id="currentBoxCountDisplay" class="text-xs md:text-sm font-black text-stone-700 bg-stone-100 px-2 py-1 rounded-md">請先挑選包裝類型</span>
                     </div>
                     
                     <div id="flavorMenu" class="space-y-1 divide-y divide-stone-100">
@@ -124,7 +129,7 @@
                         <div>
                             <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">配送方式 *</label>
                             <select id="shipMethod" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] cursor-pointer h-12 md:h-14 bg-stone-50/50" onchange="handleShippingMethodChange()" required>
-                                <option value="store">門市自取 (免運費)</option>
+                                <option value="store">門市自取付款</option>
                                 <option value="delivery">7-11 店到店取貨 (冷凍運費另計)</option>
                             </select>
                         </div>
@@ -180,6 +185,17 @@
         </section>
     </main>
 
+    <div id="countdownOverlay" class="fixed inset-0 bg-stone-950/60 backdrop-blur-xs flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl max-w-xs w-full text-center space-y-4 mx-4 border border-stone-100">
+            <h3 class="text-base md:text-lg font-black text-stone-800">訂單準備送出中...</h3>
+            <div class="text-5xl font-black text-[#5B7290] animate-bounce" id="countdownTimer">5</div>
+            <p class="text-xs text-stone-500 leading-relaxed">正在實時向雲端鎖定庫存，您可以在倒數結束前取消拋送。</p>
+            <button type="button" onclick="cancelOrderSubmission()" class="w-full border border-stone-200 text-stone-600 font-bold h-12 rounded-xl hover:bg-stone-50 active:bg-stone-100 transition-colors text-sm uppercase shadow-2xs cursor-pointer">
+                取消送出 Cancel
+            </button>
+        </div>
+    </div>
+
     <script>
         // 防止 Enter 鍵誤觸送出表單
         function preventEnterSubmit(e) {
@@ -226,9 +242,9 @@
             
             let minAllowedDate = new Date(todayMidnight.getTime());
             if (method === 'delivery') {
-                minAllowedDate.setDate(todayMidnight.getDate() + 5); // 7-11 緩衝 5 天
+                minAllowedDate.setDate(todayMidnight.getDate() + 5); 
             } else {
-                minAllowedDate.setDate(todayMidnight.getDate() + 2); // 自取緩衝 2 天
+                minAllowedDate.setDate(todayMidnight.getDate() + 2); 
             }
 
             if(targetDates && targetDates.length > 0 && targetDates[0] !== "") {
@@ -330,7 +346,6 @@
             const isBoxNotSelected = (boxSelect.value === "");
             const bName = boxSelect.value;
 
-            // 💡 識別目前選定包裝的屬性
             const isBoxWithFinancier = bName.includes("費南雪");
             const isBoxWithCanelé = bName.includes("大顆");
 
@@ -342,21 +357,16 @@
                 });
                 const virtualStock = p.stock - occupiedInCart;
                 
-                // 💡 打造完美的雙向排他隱藏邏輯
                 let isHidden = false;
 
                 if (isBoxWithFinancier) {
-                    // 1. 如果包裝叫費南雪盒，只要商品名字「沒有費南雪」，直接隱藏
                     if (!p.name.includes("費南雪")) isHidden = true;
                 } else if (isBoxWithCanelé) {
-                    // 2. 如果包裝叫大顆盒，只要商品名字「沒有大顆」，直接隱藏
                     if (!p.name.includes("大顆")) isHidden = true;
                 } else {
-                    // 3. 關鍵修正：如果是其他包裝（普通包裝），商品名字內「包含費南雪」或「包含大顆」的都要隱藏！
                     if (p.name.includes("費南雪") || p.name.includes("大顆")) isHidden = true;
                 }
 
-                // 💡 如果符合隱藏條件，直接給予空字串，完全不渲染 HTML，手機版超流暢
                 if (isHidden) return '';
 
                 const shouldDisable = virtualStock <= 0 || isBoxNotSelected;
@@ -406,7 +416,6 @@
             const bName = boxSelect.value;
             let hasViolation = false;
 
-            // 💡 連動校驗修正：切換包裝類型時，不符合新盒型規則的甜點也必須觸發重設
             localProducts.forEach((p, idx) => {
                 const qtyInput = document.getElementById(`flavorQty_${idx}`);
                 if (qtyInput && parseInt(qtyInput.value) > 0) {
@@ -501,7 +510,7 @@
                 }
             }
             if (hasError) return;
-            if(totalFlavorsCountInBox === 0) { alert("此組合內還沒有放入任何甜點喔！"); return; }
+            if(totalFlavorsCountInBox === 0) { alert("此組合內還沒有放入 any 甜點喔！"); return; }
             if (currentBoxLimit && totalFlavorsCountInBox !== currentBoxLimit) {
                 alert(`數量不符！「${boxName}」必須剛好裝滿 ${currentBoxLimit} 個品項。`);
                 return;
@@ -604,6 +613,7 @@
             return finalTotal;
         }
 
+        // 💡 核心優化：整合 5 秒倒數計時與可隨時取消機制的下單流程（已移除所有繪文字）
         async function handleOrderSubmit(e) {
             e.preventDefault();
             if(cart.length === 0) { alert("明細中還沒有任何打包好的組合！"); return; }
@@ -618,27 +628,98 @@
                 }
             }
 
+            const custName = document.getElementById('custName').value.trim();
+            const custPhone = document.getElementById('custPhone').value.trim();
+            const shipMethodVal = document.getElementById('shipMethod').value;
+            const shipDate = document.getElementById('shipDate').value;
+            const custAddress = document.getElementById('custAddress').value.trim();
+            const finalTotal = calculateTotal();
+
+            // 實時生成訂單編號
+            const orderId = "ORD" + new Date().getTime();
+            const methodText = shipMethodVal === 'delivery' ? '7-11 店到店取貨' : '門市自取付款';
+            const dateLabelText = shipMethodVal === 'delivery' ? '希望到貨日期' : '自取日期';
+
+            // 組裝購物車結構化細項明細
+            let cartDetailsText = "";
+            cart.forEach((box, index) => {
+                const flavorsList = box.flavors.map(f => `      - ${f.name} x ${f.quantity}個`).join('\n');
+                cartDetailsText += `   組合 ${index + 1}：${box.boxName}\n${flavorsList}\n`;
+            });
+
+            // 建立明細核對彈窗字串（純文字排版，無繪文字）
+            let confirmMessage = "[請再次確認您的預購單細節]\n";
+            confirmMessage += "=========================\n";
+            confirmMessage += `  預管訂單編號：${orderId}\n`;
+            confirmMessage += `  訂購姓名：${custName}\n`;
+            confirmMessage += `  聯絡手機：${custPhone}\n`;
+            confirmMessage += `  配送管道：${methodText}\n`;
+            if (shipMethodVal === 'delivery') {
+                confirmMessage += `  7-11 門市：${custAddress}\n`;
+            }
+            confirmMessage += `  ${dateLabelText}：${shipDate}\n`;
+            confirmMessage += "=========================\n";
+            confirmMessage += `  甜點組合明細：\n\n${cartDetailsText}`;
+            confirmMessage += "=========================\n";
+            confirmMessage += `  預購結帳總金額：$${finalTotal} 元\n`;
+            confirmMessage += "=========================\n\n";
+            confirmMessage += "【重要提醒】請對本畫面進行截圖保留，以便後續核對訂單資訊。\n\n";
+            confirmMessage += "若後續需要修改訂單內容，請最晚於「自取前一天」私訊 Lilou 官方 LINE 或 Instagram，我們將手動為您調度。";
+
+            // 如果按取消，則直接留在原預購頁
+            if (!confirm(confirmMessage)) {
+                return; 
+            }
+
+            // ====== 啟動 5 秒視覺化倒數與取消緩衝機制 ======
+            countdownSeconds = 5;
+            document.getElementById('countdownTimer').innerText = countdownSeconds;
+            document.getElementById('countdownOverlay').classList.remove('hidden');
+
+            // 啟動數字跳動 Interval
+            submissionInterval = setInterval(() => {
+                countdownSeconds--;
+                if (countdownSeconds > 0) {
+                    document.getElementById('countdownTimer').innerText = countdownSeconds;
+                } else {
+                    clearInterval(submissionInterval);
+                }
+            }, 1000);
+
+            // 啟動時間到執行 Timeout (改為 5000 毫秒)
+            submissionTimeout = setTimeout(async () => {
+                clearInterval(submissionInterval);
+                document.getElementById('countdownOverlay').classList.add('hidden');
+                
+                // 正式拋送資料給雲端 Google 試算表
+                await executeBackendPost(orderId, custName, custPhone, shipDate, shipMethodVal, custAddress, finalTotal);
+            }, 5000);
+        }
+
+        // 拋送資料與後台交互函數
+        async function executeBackendPost(orderId, custName, custPhone, shipDate, shipMethodVal, custAddress, finalTotal) {
             const orderProductSummary = cart.map((box, i) => {
                 const flavorsStr = box.flavors.map(f => `${f.name}(${f.quantity}個)`).join('、');
                 return `【第${i+1}組: ${box.boxName}】${flavorsStr}`;
             }).join(' ｜ ');
             const orderPackSummary = cart.map((box, i) => `[組${i+1}]${box.boxName}`).join('、');
             const totalQtyAll = cart.reduce((sum, box) => sum + box.totalQty, 0);
-            
+
             const orderData = { 
                 action: "submitOrder", 
-                name: document.getElementById('custName').value, 
-                phone: document.getElementById('custPhone').value, 
-                date: document.getElementById('shipDate').value, 
-                shipping_method: document.getElementById('shipMethod').value === 'store' ? "Store Pickup" : "7-11 Pickup", 
-                address: document.getElementById('custAddress').value, 
+                name: custName, 
+                phone: custPhone, 
+                date: shipDate, 
+                shipping_method: shipMethodVal === 'store' ? "Store Pickup" : "7-11 Pickup", 
+                address: custAddress, 
                 product_name: orderProductSummary, 
                 quantity: totalQtyAll, 
                 packaging_name: orderPackSummary, 
-                total_price: calculateTotal(), 
+                total_price: finalTotal, 
                 note: document.getElementById('orderNote').value,
                 coupon_code: appliedCoupon ? appliedCoupon.code : "",
-                cart_json: JSON.stringify(cart) 
+                cart_json: JSON.stringify(cart),
+                preset_id: orderId 
             };
 
             try {
@@ -646,7 +727,7 @@
                 const result = await res.json();
                 
                 if(result.status === "success") {
-                    alert("預購單送出成功！已為您保留數量。");
+                    alert("預購單送出成功！已為您保留限量數量。");
                     cart = []; appliedCoupon = null; 
                     document.getElementById('orderForm').reset();
                     document.getElementById('couponMessage').classList.add('hidden');
@@ -658,6 +739,15 @@
                 }
             } catch(err) { alert("送出訂單時發生錯誤，請稍後再試。"); }
         }
+
+        // 當顧客點擊倒數視窗內「取消送出」時的攔截常式
+        function cancelOrderSubmission() {
+            if (submissionTimeout) clearTimeout(submissionTimeout);
+            if (submissionInterval) clearInterval(submissionInterval);
+            document.getElementById('countdownOverlay').classList.add('hidden');
+            alert("已成功取消本次傳送！資料皆完整保留，您可以重新調整訂單內容。");
+        }
+
         fetchOptions();
     </script>
 </body>
