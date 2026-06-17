@@ -226,11 +226,9 @@
             
             let minAllowedDate = new Date(todayMidnight.getTime());
             if (method === 'delivery') {
-                // 💡 7-11 店到店取貨：只顯示今天 + 5 天之後的日期
-                minAllowedDate.setDate(todayMidnight.getDate() + 5);
+                minAllowedDate.setDate(todayMidnight.getDate() + 5); // 7-11 緩衝 5 天
             } else {
-                // 💡 門市自取：只顯示今天 + 2 天（後天）之後的日期
-                minAllowedDate.setDate(todayMidnight.getDate() + 2);
+                minAllowedDate.setDate(todayMidnight.getDate() + 2); // 自取緩衝 2 天
             }
 
             if(targetDates && targetDates.length > 0 && targetDates[0] !== "") {
@@ -258,7 +256,6 @@
                             isDateValid = false;
                         }
 
-                        // 不能選的日期通通直接從下拉選單隱藏
                         if (isDateValid) {
                             optionsHtml += `<option value="${cleanDate}">${cleanDate}${weekdayStr}</option>`;
                             hasValidDate = true;
@@ -306,8 +303,8 @@
             localPackaging = data.packaging;
             localCoupons = data.coupons || []; 
             if(data.settings) {
-                if(data.settings.pickup_available_dates) localPickupDates = data.settings.pickup_available_dates.toString().replace(/^"|"$/g, '').split(',');
-                if(data.settings.delivery_available_dates) localDeliveryDates = data.settings.delivery_available_dates.toString().replace(/^"|"$/g, '').split(',');
+                if(data.settings.pickup_available_dates) localPickupDates = data.settings.pickup_available_dates.toString().replace(/^"|" $/g, '').split(',');
+                if(data.settings.delivery_available_dates) localDeliveryDates = data.settings.delivery_available_dates.toString().replace(/^"|"$ /g, '').split(',');
             }
             const boxSelect = document.getElementById('boxSelect');
             const savedVal = boxSelect.value;
@@ -332,9 +329,6 @@
             const boxSelect = document.getElementById('boxSelect');
             const isBoxNotSelected = (boxSelect.value === "");
             const bName = boxSelect.value;
-            
-            // 💡 修正關鍵一：定義所有的袋裝、提盒包裝判斷
-            const isBagOrCarryBoxSelected = bName.includes("袋裝") || bName.includes("提盒") || bName.includes("袋");
 
             fMenu.innerHTML = localProducts.map((p, idx) => {
                 let occupiedInCart = 0;
@@ -344,17 +338,17 @@
                 });
                 const virtualStock = p.stock - occupiedInCart;
                 
-                // 💡 修正關鍵二：當點選袋裝或提盒時，把名字包含「單入」的商品設為違規，反灰顯示
+                // 💡 核心改動：對照包裝與品項的專屬關鍵字
                 let isViolation = false;
                 let statusText = '剩 ' + (virtualStock >= 0 ? virtualStock : 0);
 
-                if (isBagOrCarryBoxSelected && p.name.includes("單入")) {
+                if (bName.includes("費南雪") && !p.name.includes("費南雪")) {
                     isViolation = true;
-                    statusText = '不提供此包裝';
+                    statusText = '限費南雪品項';
                 } 
-                else if ((bName.includes("費南雪") || bName.includes("大可麗露")) && !isBagOrCarryBoxSelected && !p.name.includes("單入")) {
+                else if (bName.includes("大可麗露") && !p.name.includes("大可麗露")) {
                     isViolation = true;
-                    statusText = '限單入品項';
+                    statusText = '限大可麗露品項';
                 }
 
                 const shouldDisable = virtualStock <= 0 || isBoxNotSelected || isViolation;
@@ -403,18 +397,20 @@
             const bName = boxSelect.value;
             let hasViolation = false;
 
-            // 💡 修正關鍵三：當切換包裝類型至袋裝或提盒時，連帶校驗目前已輸入欄位
+            // 💡 核心改動：在切換盒型時，如果發現原本輸入的口味不符合新的品項規則，就觸發清空重設
             localProducts.forEach((p, idx) => {
                 const qtyInput = document.getElementById(`flavorQty_${idx}`);
                 if (qtyInput && parseInt(qtyInput.value) > 0) {
-                    if ((bName.includes("袋裝") || bName.includes("提盒") || bName.includes("袋")) && p.name.includes("單入")) {
+                    if (bName.includes("費南雪") && !p.name.includes("費南雪")) {
+                        hasViolation = true;
+                    } else if (bName.includes("大可麗露") && !p.name.includes("大可麗露")) {
                         hasViolation = true;
                     }
                 }
             });
 
             if (hasViolation) {
-                alert("【包裝商品不符】已為您自動清空與新規範不符的「單入」甜點欄位，請重新選擇散裝商品。");
+                alert("【包裝商品不符】此包裝規格與當前挑選的甜點種類不符！系統已為您重設目前數量，請重新搭配。");
                 document.querySelectorAll('.flavor-input').forEach(input => input.value = "0");
             }
 
