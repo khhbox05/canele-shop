@@ -181,7 +181,7 @@
     </main>
 
     <script>
-        // 💡 防止 Enter 鍵誤觸送出表單的防呆機制
+        // 防止 Enter 鍵誤觸送出表單的防呆機制
         function preventEnterSubmit(e) {
             const keyCode = e.keyCode || e.which;
             if (keyCode === 13 && e.target.tagName !== 'TEXTAREA') {
@@ -221,17 +221,14 @@
             const targetDates = method === 'delivery' ? localDeliveryDates : localPickupDates;
             let optionsHtml = `<option value="" disabled selected>-- 請選擇${textPrompt} --</option>`;
             
-            // 💡 取得當前的純日期基準線（將時分秒一律歸零，解決誤差）
             const now = new Date();
             const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
             
             let minAllowedDate = new Date(todayMidnight.getTime());
             if (method === 'delivery') {
-                // 💡 7-11 店到店取貨：只顯示今天 + 5 天之後的日期
-                minAllowedDate.setDate(todayMidnight.getDate() + 5);
+                minAllowedDate.setDate(todayMidnight.getDate() + 5); // 7-11 緩衝 5 天
             } else {
-                // 💡 門市自取：只顯示今天 + 2 天（後天）之後的日期
-                minAllowedDate.setDate(todayMidnight.getDate() + 2);
+                minAllowedDate.setDate(todayMidnight.getDate() + 2); // 自取緩衝 2 天
             }
 
             if(targetDates && targetDates.length > 0 && targetDates[0] !== "") {
@@ -308,7 +305,7 @@
             localCoupons = data.coupons || []; 
             if(data.settings) {
                 if(data.settings.pickup_available_dates) localPickupDates = data.settings.pickup_available_dates.toString().replace(/^"|"$/g, '').split(',');
-                if(data.settings.delivery_available_dates) localDeliveryDates = data.settings.delivery_available_dates.toString().replace(/^"|"$/g, '').split(',');
+                if(data.settings.delivery_available_dates) localDeliveryDates = data.settings.delivery_available_dates.toString().replace(/^"|"$ /g, '').split(',');
             }
             const boxSelect = document.getElementById('boxSelect');
             const savedVal = boxSelect.value;
@@ -342,27 +339,28 @@
                 });
                 const virtualStock = p.stock - occupiedInCart;
                 
-                // 💡 修正關鍵：依據包裝關鍵字「費南雪」、「大顆」對應商品名稱進行反灰鎖定
-                let isViolation = false;
-                let statusText = '剩 ' + (virtualStock >= 0 ? virtualStock : 0);
+                // 💡 營運優化調整：不符合關鍵字設定的品項直接隱藏（return ''），減少手機版滑動負擔
+                let isHidden = false;
 
                 if (bName.includes("費南雪") && !p.name.includes("費南雪")) {
-                    isViolation = true;
-                    statusText = '限費南雪品項';
+                    isHidden = true;
                 } 
                 else if (bName.includes("大顆") && !p.name.includes("大顆")) {
-                    isViolation = true;
-                    statusText = '限大顆品項';
+                    isHidden = true;
                 }
 
-                const shouldDisable = virtualStock <= 0 || isBoxNotSelected || isViolation;
+                // 💡 如果需要隱藏，直接不渲染該品項 HTML，介面維持最高流暢度
+                if (isHidden) return '';
+
+                const shouldDisable = virtualStock <= 0 || isBoxNotSelected;
+                let statusText = '剩 ' + (virtualStock >= 0 ? virtualStock : 0);
                 
                 return `
                 <div class="flex items-center justify-between py-3 gap-2">
-                    <div class="flex-1 min-w-0 ${isViolation ? 'opacity-30' : ''}">
+                    <div class="flex-1 min-w-0">
                         <span class="font-bold text-stone-900 text-sm md:text-base break-words block">${p.name}</span>
                         <span class="text-[#5B7290] font-black text-sm md:text-base">$${p.price}</span>
-                        <span class="text-[10px] md:text-xs ${virtualStock <= 0 ? 'text-red-500 font-bold' : (isViolation ? 'text-amber-600 font-medium' : 'text-stone-400')} ml-0.5">${statusText}</span>
+                        <span class="text-[10px] md:text-xs ${virtualStock <= 0 ? 'text-red-500 font-bold' : 'text-stone-400'} ml-0.5">${statusText}</span>
                     </div>
                     <div class="shrink-0 flex items-center bg-stone-100 rounded-xl p-0.5 border border-stone-200 ${(isBoxNotSelected || shouldDisable) ? 'opacity-30 select-none' : ''}">
                         <button type="button" onclick="stepFlavorQty(${idx}, -1)" ${shouldDisable ? 'disabled' : ''} class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center font-black text-stone-600 hover:text-stone-900 bg-white rounded-lg shadow-2xs active:bg-stone-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm md:text-base">—</button>
@@ -401,7 +399,7 @@
             const bName = boxSelect.value;
             let hasViolation = false;
 
-            // 💡 修正關鍵：在切換包裝樣式時，如果與目前已選取甜點種類不符，觸發自動重設數量
+            // 切換盒型時進行連動校驗，若原本輸入了不符新盒型的內容，直接清空重選並過濾
             localProducts.forEach((p, idx) => {
                 const qtyInput = document.getElementById(`flavorQty_${idx}`);
                 if (qtyInput && parseInt(qtyInput.value) > 0) {
@@ -414,7 +412,7 @@
             });
 
             if (hasViolation) {
-                alert("【包裝商品不符】此包裝規格與當前挑選的甜點種類不符！系統已為您自動重設數量，請重新搭配。");
+                alert("【包裝商品不符】已為您切換包裝選單。系統已自動清空您目前輸入的欄位，並將不符合的商品自動隱藏。");
                 document.querySelectorAll('.flavor-input').forEach(input => input.value = "0");
             }
 
@@ -599,7 +597,7 @@
 
         async function handleOrderSubmit(e) {
             e.preventDefault();
-            if(cart.length === 0) { alert("明細中還沒有 any 打包好的組合！"); return; }
+            if(cart.length === 0) { alert("明細中還沒有任何打包好的組合！"); return; }
             let currentSubtotal = 0; 
             cart.forEach(box => { currentSubtotal += box.boxTotalCost; });
             if (appliedCoupon) {
