@@ -91,7 +91,7 @@
                 </div>
             </div>
 
-            <form id="orderForm" class="bg-white p-4 md:p-8 rounded-2xl shadow-xs border border-stone-100 space-y-6 md:space-y-8" onsubmit="handleOrderSubmit(event)">
+            <form id="orderForm" class="bg-white p-4 md:p-8 rounded-2xl shadow-xs border border-stone-100 space-y-6 md:space-y-8" onsubmit="handleOrderSubmit(event)" onkeypress="return preventEnterSubmit(event)">
                 
                 <div class="space-y-4">
                     <div class="flex items-center gap-2 border-b border-stone-100 pb-3">
@@ -181,6 +181,17 @@
     </main>
 
     <script>
+        // 💡 防止 Enter 鍵誤觸送出表單的控制代碼
+        function preventEnterSubmit(e) {
+            const keyCode = e.keyCode || e.which;
+            // 如果按下的是 Enter (13)，且當前焦點元件「不是」備註說明區 (textarea)，就阻擋它
+            if (keyCode === 13 && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                return false;
+            }
+            return true;
+        }
+
         function handleShippingMethodChange() {
             const method = document.getElementById('shipMethod').value;
             const addrGroup = document.getElementById('addressGroup');
@@ -216,8 +227,10 @@
             
             let minAllowedDate = new Date(todayMidnight.getTime());
             if (method === 'delivery') {
+                // 💡 7-11 店到店取貨：只顯示今天 + 5 天之後的日期 
                 minAllowedDate.setDate(todayMidnight.getDate() + 5);
             } else {
+                // 💡 門市自取：只顯示今天 + 2 天（後天）之後的日期 
                 minAllowedDate.setDate(todayMidnight.getDate() + 2);
             }
 
@@ -246,6 +259,7 @@
                             isDateValid = false;
                         }
 
+                        // 不能選的日期通通直接隱藏 
                         if (isDateValid) {
                             optionsHtml += `<option value="${cleanDate}">${cleanDate}${weekdayStr}</option>`;
                             hasValidDate = true;
@@ -320,7 +334,6 @@
             const isBoxNotSelected = (boxSelect.value === "");
             const bName = boxSelect.value;
             
-            // 識別包裝類型
             const isBagOrCarryBoxSelected = bName.includes("袋裝") || bName.includes("提盒") || bName.includes("袋");
 
             fMenu.innerHTML = localProducts.map((p, idx) => {
@@ -331,7 +344,7 @@
                 });
                 const virtualStock = p.stock - occupiedInCart;
                 
-                // 💡 調整核心：不符包裝設定的品項「反灰」而非隱藏
+                // 不符包裝設定的品項反灰不隱藏 
                 let isViolation = false;
                 let statusText = '剩 ' + (virtualStock >= 0 ? virtualStock : 0);
 
@@ -375,7 +388,6 @@
             calculateCurrentBoxTotal(input, idx, currentVal);
         }
 
-        // 剩餘邏輯如 handleBoxChange、packBoxToCart、calculateTotal、handleOrderSubmit 等皆完整保持不變...
         function handleBoxChange() {
             const boxSelect = document.getElementById('boxSelect');
             if(boxSelect.value !== "") {
