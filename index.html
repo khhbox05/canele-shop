@@ -22,6 +22,10 @@
             -webkit-appearance: none; 
             margin: 0; 
         }
+        /* 平滑捲動動畫效果 */
+        html {
+            scroll-behavior: smooth;
+        }
     </style>
 </head>
 <body class="bg-[#F4F6F9] text-[#222222] min-h-screen font-sans antialiased selection:bg-[#5B7290]/20">
@@ -29,7 +33,6 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbzAIcNDGVm200Du_lGcAqV649dIqsLGDOLDkd6fWnUE1K7EA5sH-m2Z4RNdOVk4KKHB/exec";
         
-        // 冷凍運費為 129 元
         let shippingFee = 129; 
         let cart = []; 
         let localProducts = []; 
@@ -41,7 +44,6 @@
         let localDeliveryDates = []; 
         let appliedCoupon = null; 
 
-        // 倒數計時與取消用的全域變數（已升級為 5 秒緩衝）
         let submissionTimeout = null;
         let submissionInterval = null;
         let countdownSeconds = 5;
@@ -49,8 +51,13 @@
 
     <nav class="bg-[#5B7290] text-white p-4 md:p-5 shadow-sm sticky top-0 z-50 backdrop-blur-md bg-opacity-95">
         <div class="max-w-3xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl md:text-2xl font-black tracking-widest">Lilou</h1>
-            <span class="text-xs md:text-sm border border-white/40 px-3.5 py-1 rounded-full text-white/90 tracking-wider font-medium shrink-0">ONLINE SHOP</span>
+            <h1 class="text-xl md:text-2xl font-black tracking-widest cursor-pointer" onclick="window.location.reload()">Lilou</h1>
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="triggerAndScrollToSearch()" class="text-xs md:text-sm bg-white/10 hover:bg-white/20 border border-white/20 px-3 py-1.5 rounded-xl font-bold tracking-wider cursor-pointer transition-all">
+                    查詢訂單
+                </button>
+                <span class="hidden md:inline text-xs border border-white/40 px-3.5 py-1 rounded-full text-white/90 tracking-wider font-medium shrink-0">ONLINE SHOP</span>
+            </div>
         </div>
     </nav>
 
@@ -184,15 +191,15 @@
                         送出預購訂單 Submit Order
                     </button>
                 </form>
-            </form>
-            
-            <section class="bg-white p-4 md:p-8 rounded-2xl shadow-xs border border-stone-100 space-y-4 mt-6">
+            </section>
+
+            <section id="searchAnchorPoint" class="hidden bg-white p-4 md:p-8 rounded-2xl shadow-xs border border-stone-100 space-y-4 mt-6 transition-all duration-500">
                 <div class="flex items-center gap-2 border-b border-stone-100 pb-3">
                     <span class="bg-[#5B7290] text-white text-xs md:text-sm font-black px-2 py-0.5 rounded">04</span>
                     <h3 class="text-sm md:text-base font-black text-[#5B7290] tracking-wider uppercase">快速查詢預購單</h3>
                 </div>
                 <div class="flex gap-2">
-                    <input type="tel" id="searchPhoneInput" class="flex-1 px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 bg-stone-50/50" placeholder="請輸入訂購時的手機號碼">
+                    <input type="tel" id="searchPhoneInput" class="flex-1 px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 bg-stone-50/50 font-bold transition-all" placeholder="請輸入訂購時的手機號碼">
                     <button type="button" onclick="searchOrdersByPhone()" class="bg-[#5B7290] text-white font-bold px-6 rounded-xl hover:bg-[#3E4F66] transition-all text-sm md:text-base shrink-0 cursor-pointer h-12">
                         查詢
                     </button>
@@ -208,9 +215,7 @@
             <div class="text-center border-b border-stone-100 pb-4">
                 <h2 class="text-xl md:text-2xl font-black text-stone-800 tracking-wider">LILOU 預購收據確認單</h2>
             </div>
-            
             <div id="receiptContent"></div>
-            
             <div class="space-y-3 pt-4 border-t border-stone-100">
                 <button type="button" onclick="shareReceipt()" class="w-full bg-[#5B7290] text-white font-black h-12 md:h-14 rounded-xl hover:bg-[#3E4F66] transition-colors shadow-xs cursor-pointer text-sm md:text-base uppercase tracking-wider">
                     分享或儲存預購明細
@@ -234,7 +239,29 @@
     </div>
 
     <script>
-        // 防止 Enter 鍵誤觸送出表單
+        // 💡 關鍵變動：點擊查詢訂單時，動態打開隱藏的區塊、滑動、高亮聚焦
+        function triggerAndScrollToSearch() {
+            const anchor = document.getElementById('searchAnchorPoint');
+            const inputField = document.getElementById('searchPhoneInput');
+            
+            if (anchor) {
+                // 1. 如果本來被隱藏，立刻移除 hidden 類別使其在 DOM 中展開
+                anchor.classList.remove('hidden');
+                
+                // 2. 平滑滾動到查詢區塊中央
+                anchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // 3. 延時等待滾動結束後，自動高亮與聚焦
+                setTimeout(() => {
+                    inputField.focus();
+                    anchor.classList.add('ring-4', 'ring-[#5B7290]/30', 'border-[#5B7290]');
+                    setTimeout(() => {
+                        anchor.classList.remove('ring-4', 'ring-[#5B7290]/30');
+                    }, 1500);
+                }, 400);
+            }
+        }
+
         function preventEnterSubmit(e) {
             const keyCode = e.keyCode || e.which;
             if (keyCode === 13 && e.target.tagName !== 'TEXTAREA') {
@@ -650,7 +677,6 @@
             return finalTotal;
         }
 
-        // 💡 核心優化：整合 5 秒倒數計時與可隨時取消機制的下單流程（已移除所有emoji）
         async function handleOrderSubmit(e) {
             e.preventDefault();
             if(cart.length === 0) { alert("明細中還沒有任何打包好的組合！"); return; }
@@ -672,19 +698,16 @@
             const custAddress = document.getElementById('custAddress').value.trim();
             const finalTotal = calculateTotal();
 
-            // 實時生成訂單編號
             const orderId = "ORD" + new Date().getTime();
             const methodText = shipMethodVal === 'delivery' ? '7-11 店到店取貨' : '門市自取付款';
             const dateLabelText = shipMethodVal === 'delivery' ? '希望到貨日期' : '自取日期';
 
-            // 組裝購物車結構化細項明細
             let cartDetailsText = "";
             cart.forEach((box, index) => {
                 const flavorsList = box.flavors.map(f => `      - ${f.name} x ${f.quantity}個`).join('\n');
                 cartDetailsText += `    組合 ${index + 1}：${box.boxName}\n${flavorsList}\n`;
             });
 
-            // 建立明細核對彈窗字串（純文字排版，無繪文字）
             let confirmMessage = "[請再次確認您的預購單細節]\n";
             confirmMessage += "=========================\n";
             confirmMessage += `  預管訂單編號：${orderId}\n`;
@@ -703,17 +726,14 @@
             confirmMessage += "【重要提醒】請對本畫面進行截圖保留，以便後續核對訂單資訊。\n\n";
             confirmMessage += "若後續需要修改訂單內容，請最晚於「自取前一天」私訊 Lilou 官方 LINE 或 Instagram，我們將手動為您調度。";
 
-            // 如果按取消，則直接留在原預購頁
             if (!confirm(confirmMessage)) {
                 return; 
             }
 
-            // ====== 啟動 5 秒視覺化倒數與取消緩衝機制 ======
             countdownSeconds = 5;
             document.getElementById('countdownTimer').innerText = countdownSeconds;
             document.getElementById('countdownOverlay').classList.remove('hidden');
 
-            // 啟動數字跳動 Interval
             submissionInterval = setInterval(() => {
                 countdownSeconds--;
                 if (countdownSeconds > 0) {
@@ -723,17 +743,13 @@
                 }
             }, 1000);
 
-            // 啟動時間到執行 Timeout (改為 5000 毫秒)
             submissionTimeout = setTimeout(async () => {
                 clearInterval(submissionInterval);
                 document.getElementById('countdownOverlay').classList.add('hidden');
-                
-                // 正式拋送資料給雲端 Google 試算表
                 await executeBackendPost(orderId, custName, custPhone, shipDate, shipMethodVal, custAddress, finalTotal);
             }, 5000);
         }
 
-        // 拋送資料與後台交互函數
         async function executeBackendPost(orderId, custName, custPhone, shipDate, shipMethodVal, custAddress, finalTotal) {
             const orderProductSummary = cart.map((box, i) => {
                 const flavorsStr = box.flavors.map(f => `${f.name}(${f.quantity}個)`).join('、');
@@ -766,7 +782,6 @@
                 if(result.status === "success") {
                     alert("預購單送出成功！已為您保留限量數量。");
                     
-                    // 💡 優化：隱藏原本的填單區，渲染獨立的極簡收據確認頁，把重要提醒移至第一行
                     document.getElementById('formContainer').classList.add('hidden');
                     
                     let cartDetailsHtml = cart.map((box, idx) => {
@@ -802,8 +817,6 @@
                     `;
                     
                     document.getElementById('receiptContainer').classList.remove('hidden');
-                    
-                    // 清空本地快取購物車
                     cart = []; appliedCoupon = null; 
                 } else if (result.status === "error") {
                     alert(result.message);
@@ -811,7 +824,6 @@
             } catch(err) { alert("送出訂單時發生錯誤，請稍後再試。"); }
         }
 
-        // 當顧客點擊倒數視窗內「取消送出」時的攔截常式
         function cancelOrderSubmission() {
             if (submissionTimeout) clearTimeout(submissionTimeout);
             if (submissionInterval) clearInterval(submissionInterval);
@@ -819,7 +831,6 @@
             alert("已成功取消本次傳送！資料皆完整保留，您可以重新調整訂單內容。");
         }
 
-        // 📱 手機號碼向後台試算表即時查單函數 (兩階段折疊列表)
         async function searchOrdersByPhone() {
             const phone = document.getElementById('searchPhoneInput').value.trim();
             if (!phone) { alert("請輸入手機號碼！"); return; }
@@ -860,13 +871,11 @@
             }
         }
 
-        // 控制折疊詳細內容的展收
         function toggleOrderDetailDisplay(idx) {
             const block = document.getElementById(`orderDetailBlock_${idx}`);
             block.classList.toggle('hidden');
         }
 
-        // 🔗 呼叫智慧型手機原生 Share API 功能
         function shareReceipt() {
             const receiptText = document.getElementById('receiptContent').innerText;
             if (navigator.share) {
@@ -876,7 +885,6 @@
                 }).then(() => console.log('分享成功'))
                   .catch((error) => console.log('使用者取消分享', error));
             } else {
-                // 桌機或不支援時，啟動系統列印對話框（可直接另存為 PDF）
                 window.print();
             }
         }
