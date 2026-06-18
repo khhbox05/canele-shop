@@ -71,10 +71,7 @@
                 <button type="button" id="navShopBtn" onclick="switchMode('shop')" class="cursor-pointer transition-all duration-200 border-b-2 border-white pb-0.5 text-white">
                     我要購物
                 </button>
-                <!-- <button type="button" id="navSearchBtn" onclick="switchMode('search')" class="cursor-pointer transition-all duration-200 border-b-2 border-transparent pb-0.5 text-white/70 hover:text-white">
-                    查詢訂單
-                </button> -->
-            </div>
+                </div>
         </div>
     </nav>
 
@@ -171,7 +168,7 @@
                                     開啟 7-11 門市地圖查詢
                                 </a>
                             </div>
-                            <input type="text" id="custAddress" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none h-12 md:h-14 bg-stone-100 font-bold text-stone-700 select-all" value="高雄市前鎮區景德路72巷12號" readonly>
+                            <input type="text" id="custAddress" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none h-12 md:h-14 bg-stone-100 font-bold text-stone-700 select-all" value="高雄市前鎮區景德路72巷12號 (營業時間 14:00-18:00)" readonly>
                         </div>
 
                         <div>
@@ -196,7 +193,7 @@
                         <div id="shipFeeDisplay" class="hidden">7-11 冷凍運費 Shipping: <span class="font-bold text-stone-700 md:text-base">+$129</span></div>
                         <div id="couponDiscountDisplay" class="hidden text-red-500 font-bold">折扣折抵 Discount: <span class="md:text-base">-$0</span></div>
                         
-                        <div class="text-[#222222] font-black text-xl md:text-2xl pt-2.5 border-t border-stone-200 mt-2">
+                        <div class="text-[#222222] font-black text-xl md:text-2xl pt-2.5 border-t border-stone-220 mt-2">
                             總金額 Total：<span id="totalDisplay" class="text-xl md:text-2xl font-black text-[#5B7290]">$0</span>
                         </div>
                     </div>
@@ -345,7 +342,7 @@
                 mapLink.style.display = 'none'; 
                 addrInput.required = false;
                 addrInput.readOnly = true;
-                addrInput.value = "高雄市前鎮區景德路72巷12號";
+                addrInput.value = "高雄市前鎮區景德路72巷12號 (營業時間 14:00-18:00)";
                 addrInput.className = "w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none h-12 md:h-14 bg-stone-100 font-bold text-stone-700 select-all";
                 shipFeeDisplay.classList.add('hidden');
                 dateLabel.innerText = "門市自取日期 *";
@@ -538,7 +535,7 @@
             const finalTotal = calculateTotal();
             const orderId = "ORD" + new Date().getTime();
 
-            const methodText = shipMethodVal === 'delivery' ? `7-11 店到店 (${custAddress})` : `門市自取付款 (高雄市前鎮區景德路72巷12號)`;
+            const methodText = shipMethodVal === 'delivery' ? `7-11 店到店 (${custAddress})` : `門市自取付款 (高雄市前鎮區景德路72巷12號 (營業時間 14:00-18:00))`;
             
             // 💡 初始文字設定
             document.getElementById('overlayMainTitle').innerText = "訂單準備送出中...";
@@ -607,7 +604,7 @@
             const orderPackSummary = cart.map((box, i) => `[組${i+1}]${box.boxName}`).join('、');
             const totalQtyAll = cart.reduce((sum, box) => sum + box.totalQty, 0);
 
-            const finalDatabaseAddress = shipMethodVal === 'store' ? "高雄市前鎮區景德路72巷12號" : rustAddress;
+            const finalDatabaseAddress = shipMethodVal === 'store' ? "高雄市前鎮區景德路72巷12號 (營業時間 14:00-18:00)" : rustAddress;
 
             const orderData = { 
                 action: "submitOrder", name: custName, phone: custPhone, date: shipDate, 
@@ -645,7 +642,10 @@
                             <div class="font-bold text-stone-800 mb-1">甜點組合明細：</div>${cartDetailsHtml}
                         </div>
                         <div class="text-right text-lg font-black text-[#5B7290] pt-2 border-t border-stone-100">結帳總金額：$${finalTotal} 元</div>
-                        <div class="mt-6 text-xs text-stone-400 leading-relaxed bg-stone-50 p-3 rounded-lg">請留存此訂購明細！方便您取貨時確認內容。如需要修改訂單內容，請私訊Lilou官方 LINE 或 Instagram，我們將人工為您調整，謝謝您的購買與配合^___^</div>
+                        <div class="mt-6 text-sm font-bold text-amber-900 leading-relaxed bg-amber-50 border border-amber-200 p-4 rounded-xl shadow-xs">
+                            ⚠️ 重要注意事項：<br>
+                            請留存此訂購明細！方便您取貨時確認內容。如需要修改訂單內容，請私訊 Lilou 官方 LINE 或 Instagram，我們將人工為您調整，謝謝您的購買與配合^___^
+                        </div>
                     `;
                     document.getElementById('receiptContainer').classList.remove('hidden');
                     cart = []; appliedCoupon = null; 
@@ -657,7 +657,7 @@
         }
 
         function cancelOrderSubmission() { if (submissionTimeout) clearTimeout(submissionTimeout); if (submissionInterval) clearInterval(submissionInterval); pendingOrderSnapshot = null; document.getElementById('countdownOverlay').classList.add('hidden'); alert("已成功取消本次傳送！資料皆完整保留，您可以重新調整訂單內容。"); }
-        async function searchOrdersByPhone() { const rawPhone = document.getElementById('searchPhoneInput').value; const phone = rawPhone.toString().replace(/[^0-9]/g, '').trim(); if (!phone) { alert("請輸入正確的手機號碼！"); return; } const listContainer = document.getElementById('searchResultList'); const area = document.getElementById('searchResultArea'); listContainer.innerHTML = `<p class="text-stone-400 text-center py-4 text-xs animate-pulse">正在搜尋雲端訂單紀錄...</p>`; area.classList.remove('hidden'); try { const res = await fetch(`${API_URL}?action=queryOrders&phone=${encodeURIComponent(phone)}&_=${new Date().getTime()}`); const result = await res.json(); if (result.status === "success" && result.data.length > 0) { listContainer.innerHTML = result.data.map((order, idx) => `<div class="border border-stone-200 rounded-xl bg-stone-50/50 overflow-hidden text-left"><div onclick="toggleOrderDetailDisplay(${idx})" class="p-3 md:p-4 flex justify-between items-center cursor-pointer hover:bg-stone-100/50 transition-colors"><div class="space-y-0.5"><div class="text-xs text-stone-400 font-mono">${order.date}</div><div class="font-extrabold text-sm text-stone-900 font-mono">${order.id}</div></div><div class="font-black text-sm md:text-base text-[#5B7290]">${order.total} 元 ▽</div></div><div id="orderDetailBlock_${idx}" class="hidden p-4 bg-white border-t border-stone-100 text-xs md:text-sm text-stone-600 space-y-2 font-mono whitespace-pre-line"><strong>訂購姓名：</strong>${order.name} <strong>配送管道：</strong>${order.method === "Store Pickup" ? "門市自取付款" : "7-11 店到店取貨"}${order.address ? `\n<strong>取貨門市/地址：</strong>${order.address}` : ''}\n<strong>甜點明細：</strong>\n${order.details}\n${order.note ? `<strong>備註事項：</strong>${order.note}` : ''}</div></div>`).join(''); } else { listContainer.innerHTML = `<p class="text-stone-400 text-center py-4 text-xs">查無此手機號碼的預購紀錄。</p>`; } } catch (err) { listContainer.innerHTML = `<p class="text-red-400 text-center py-4 text-xs">查詢失敗，請稍後再試。</p>`; } }
+        async function searchOrdersByPhone() { const rawPhone = document.getElementById('searchPhoneInput').value; const phone = rawPhone.toString().replace(/[^0-9]/g, '').trim(); if (!phone) { alert("請輸入正確的手機號碼！"); return; } const listContainer = document.getElementById('searchResultList'); const area = document.getElementById('searchResultArea'); listContainer.innerHTML = `<p class="text-stone-400 text-center py-4 text-xs animate-pulse">正在搜尋雲端訂單紀錄...</p>`; area.classList.remove('hidden'); try { const res = await fetch(`${API_URL}?action=queryOrders&phone=${encodeURIComponent(phone)}&_=${new Date().getTime()}`); const result = await res.json(); if (result.status === "success" && result.data.length > 0) { listContainer.innerHTML = result.data.map((order, idx) => `<div class="border border-stone-200 rounded-xl bg-stone-50/50 overflow-hidden text-left"><div onclick="toggleOrderDetailDisplay(${idx})" class="p-3 md:p-4 flex justify-between items-center cursor-pointer hover:bg-stone-100/50 transition-colors"><div class="space-y-0.5"><div class="text-xs text-stone-400 font-mono">${order.date}</div><div class="font-extrabold text-sm text-stone-900 font-mono">${order.id}</div></div><div class="font-black text-sm md:text-base text-[#5B7290]">${order.total} 元 ▽</div></div><div id="orderDetailBlock_${idx}" class="hidden p-4 bg-white border-t border-stone-100 text-xs md:text-sm text-stone-600 space-y-2 font-mono whitespace-pre-line"><strong>訂購姓名：</strong>${order.name} <strong>配送管道：</strong>${order.method === "Store Pickup" ? "門市自取付款" : "7-11 店到店取貨"}${order.address ? `\n<strong>取貨門市/地址：</strong>${order.address}` : ''}\n<strong>甜點明細：</strong>\n${order.details}\n${order.note ? `<strong>備註事項：</strong>${order.note}` : ''}</div></div>`).join(''); } else { listContainer.innerHTML = `<p class="text-stone-400 text-center py-4 text-xs">查過此手機號碼的預購紀錄。</p>`; } } catch (err) { listContainer.innerHTML = `<p class="text-red-400 text-center py-4 text-xs">查詢失敗，請稍後再試。</p>`; } }
         function toggleOrderDetailDisplay(idx) { const block = document.getElementById(`orderDetailBlock_${idx}`); block.classList.toggle('hidden'); }
         function shareReceipt() { const receiptText = document.getElementById('receiptContent').innerText; if (navigator.share) { navigator.share({ title: 'Lilou 預購收據確認單', text: '這是我在 Lilou 的甜點預購單明細紀錄：\n\n' + receiptText, }).then(() => console.log('分享成功')).catch((error) => console.log('使用者取消分享', error)); } else { window.print(); } }
         fetchOptions();
