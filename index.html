@@ -55,7 +55,7 @@
             <h1 class="text-xl md:text-2xl font-black tracking-widest cursor-pointer" onclick="window.location.reload()">Lilou</h1>
             <div class="flex items-center gap-6 font-bold tracking-widest text-xs md:text-sm">
                 <button type="button" id="navShopBtn" onclick="switchMode('shop')" class="cursor-pointer transition-all duration-200 border-b-2 border-white pb-0.5 text-white">
-                    我要購物
+                    淺要購物
                 </button>
                 <button type="button" id="navSearchBtn" onclick="switchMode('search')" class="cursor-pointer transition-all duration-200 border-b-2 border-transparent pb-0.5 text-white/70 hover:text-white">
                     查詢訂單
@@ -323,7 +323,6 @@
             calculateTotal();
         }
 
-        // 💡 智慧優化：當沒有日期可用時，下拉選單自動加上（關閉中）
         function renderAvailableDates(method) {
             const dateSelect = document.getElementById('shipDate');
             const textPrompt = method === 'delivery' ? '到貨日期' : '自取日期';
@@ -371,12 +370,9 @@
                 });
             }
 
-            // 🛠️ 根據是否有可用日期，動態調整最上層提示字
             if (!hasValidDate) {
-                // 如果沒有任何日期可用，提示字加上「（關閉中）」
                 optionsHtml = `<option value="" disabled selected>-- 請選擇${textPrompt}（關閉中） --</option>` + optionsHtml;
             } else {
-                // 正常狀態
                 optionsHtml = `<option value="" disabled selected>-- 請選擇${textPrompt} --</option>` + optionsHtml;
             }
             
@@ -430,8 +426,69 @@
         function stepFlavorQty(idx, change) { const input = document.getElementById(`flavorQty_${idx}`); if (!input) return; let currentVal = parseInt(input.value) || 0; let newVal = currentVal + change; const maxStock = parseInt(input.max) || 0; if (newVal < 0) newVal = 0; if (newVal > maxStock) newVal = maxStock; input.value = newVal; calculateCurrentBoxTotal(input, idx, currentVal); }
         function handleBoxChange() { const boxSelect = document.getElementById('boxSelect'); if(boxSelect.value !== "") { const bVal = boxSelect.value; if (bVal.includes("單入") || bVal.includes("個別") || bVal.includes("免禮盒")) { currentBoxLimit = null; } else { const match = bVal.match(/\d+/); currentBoxLimit = null; currentBoxLimit = match ? parseInt(match[0]) : null; } } else { currentBoxLimit = null; } const bName = boxSelect.value; let hasViolation = false; localProducts.forEach((p, idx) => { const qtyInput = document.getElementById(`flavorQty_${idx}`); if (qtyInput && parseInt(qtyInput.value) > 0) { if (bName.includes("費南雪") && !p.name.includes("費南雪")) { hasViolation = true; } else if (bName.includes("大顆") && !p.name.includes("大顆")) { hasViolation = true; } else if (!bName.includes("費南雪") && !bName.includes("大顆") && (p.name.includes("費南雪") || p.name.includes("大顆"))) { hasViolation = true; } } }); if (hasViolation) { alert("【包裝商品不符】已為您切換商品組合選單。系統已自動重設目前輸入的甜點欄位，並為您重新隱藏不適用的口味。"); document.querySelectorAll('.flavor-input').forEach(input => input.value = "0"); } document.querySelectorAll('.flavor-input').forEach(input => { if(boxSelect.value === "") input.value = "0"; }); renderFlavorMenu(); calculateTotal(); calculateCurrentBoxTotal(null); }
         function calculateCurrentBoxTotal(currentInputObj, changedIdx = null, previousVal = 0) { const inputs = document.querySelectorAll('.flavor-input'); let currentTotal = 0; inputs.forEach(input => { currentTotal += (parseInt(input.value) || 0); }); if (currentBoxLimit && currentTotal > currentBoxLimit) { if (currentInputObj && changedIdx !== null) { alert(`數量超標！此組合限制容量為 ${currentBoxLimit} 個。`); currentInputObj.value = previousVal; currentTotal = 0; inputs.forEach(input => { currentTotal += (parseInt(input.value) || 0); }); } } const display = document.getElementById('currentBoxCountDisplay'); if (currentBoxLimit) { display.innerText = `已選: ${currentTotal} / ${currentBoxLimit} 個`; inputs.forEach(input => { const idx = parseInt(input.getAttribute('data-idx')); const product = localProducts[idx]; if (!product) return; let occupiedInCart = 0; cart.forEach(savedBox => { const matchFlavor = savedBox.flavors.find(f => f.name === product.name); if (matchFlavor) occupiedInCart += matchFlavor.quantity; }); const virtualStock = product.stock - occupiedInCart; const selfValue = parseInt(input.value) || 0; let allowedMax = selfValue + (currentBoxLimit - currentTotal); if (allowedMax > virtualStock) allowedMax = virtualStock; input.max = allowedMax >= 0 ? allowedMax : 0; }); } else { const boxSelect = document.getElementById('boxSelect'); display.innerText = boxSelect.value === "" ? "請先挑選包裝類型" : `已選: ${currentTotal} 個`; } return currentTotal; }
-        function packBoxToCart() { const boxSelect = document.getElementById('boxSelect'); if(boxSelect.value === "") { alert("請先挑選要使用的包裝類型！"); return; } const boxName = boxSelect.value; const boxExtra = parseInt(boxSelect.selectedOptions[0].getAttribute('data-extra')) || 0; const inputs = document.querySelectorAll('.flavor-input'); let boxFlavors = []; let totalFlavorsCountInBox = 0; let boxFlavorsCost = 0; let hasError = false; for (let input of inputs) { const qty = parseInt(input.value) || 0; if (qty > 0) { const idx = parseInt(input.getAttribute('data-idx')); const product = localProducts[idx]; let occupiedInCart = 0; cart.forEach(savedBox => { const matchFlavor = savedBox.flavors.find(f => f.name === product.name); if (matchFlavor) occupiedInCart += matchFlavor.quantity; }); const virtualStock = product.stock - occupiedInCart; if (qty > virtualStock) { alert(`庫存不足！「${product.name}」最多只能再填入 ${virtualStock >= 0 ? virtualStock : 0} 個。`); hasError = true; break; } boxFlavors.push({ name: product.name, price: product.price, quantity: qty }); totalFlavorsCountInBox += qty; boxFlavorsCost += (product.price * qty); } } if (hasError) return; if(totalFlavorsCountInBox === 0) { alert("此組合內還沒有放入 any 甜點喔！"); return; } if (currentBoxLimit && totalFlavorsCountInBox !== currentBoxLimit) { alert(`數量不符！「${boxName}」必須剛好裝滿 ${currentBoxLimit} 個品項。`); return; } cart.push({ boxName: boxName, boxExtra: boxExtra, flavors: boxFlavors, flavorsCost: boxFlavorsCost, totalQty: totalFlavorsCountInBox, boxTotalCost: boxFlavorsCost + boxExtra }); alert(`成功打包放入明細！`); boxSelect.value = ""; currentBoxLimit = null; renderFlavorMenu(); renderCart(); }
+        
+        function packBoxToCart() { 
+            const boxSelect = document.getElementById('boxSelect'); 
+            if(boxSelect.value === "") { alert("請先挑選要使用的包裝類型！"); return; } 
+            const boxName = boxSelect.value; 
+            const boxExtra = parseInt(boxSelect.selectedOptions[0].getAttribute('data-extra')) || 0; 
+            const inputs = document.querySelectorAll('.flavor-input'); 
+            let boxFlavors = []; 
+            let totalFlavorsCountInBox = 0; 
+            let boxFlavorsCost = 0; 
+            let hasError = false; 
+            for (let input of inputs) { 
+                const qty = parseInt(input.value) || 0; 
+                if (qty > 0) { 
+                    const idx = parseInt(input.getAttribute('data-idx')); 
+                    const product = localProducts[idx]; 
+                    let occupiedInCart = 0; 
+                    cart.forEach(savedBox => { const matchFlavor = savedBox.flavors.find(f => f.name === product.name); if (matchFlavor) occupiedInCart += matchFlavor.quantity; }); 
+                    const virtualStock = product.stock - occupiedInCart; 
+                    if (qty > virtualStock) { alert(`庫存不足！「${product.name}」最多只能再填入 ${virtualStock >= 0 ? virtualStock : 0} 個。`); hasError = true; break; } 
+                    boxFlavors.push({ name: product.name, price: product.price, quantity: qty }); 
+                    totalFlavorsCountInBox += qty; 
+                    boxFlavorsCost += (product.price * qty); 
+                } 
+            } 
+            if (hasError) return; 
+            if(totalFlavorsCountInBox === 0) { alert("此組合內還沒有放入任何甜點喔！"); return; } 
+            if (currentBoxLimit && totalFlavorsCountInBox !== currentBoxLimit) { alert(`數量不符！「${boxName}」必須剛好裝滿 ${currentBoxLimit} 個品項。`); return; } 
+            cart.push({ boxName: boxName, boxExtra: boxExtra, flavors: boxFlavors, flavorsCost: boxFlavorsCost, totalQty: totalFlavorsCountInBox, boxTotalCost: boxFlavorsCost + boxExtra }); 
+            alert(`成功打包放入明細！`); 
+            boxSelect.value = ""; 
+            currentBoxLimit = null; 
+            renderFlavorMenu(); 
+            renderCart(); 
+        }
+
         function removeFromCart(cartIdx) { cart.splice(cartIdx, 1); renderFlavorMenu(); renderCart(); }
+
+        // 💡 100% 完好加回反引號修復版：徹底解決明細不出現與壞掉的問題！
+        function renderCart() { 
+            const container = document.getElementById('cartListContainer'); 
+            if(cart.length === 0) { 
+                container.innerHTML = `<p class="text-stone-400 text-center py-6 text-xs md:text-base">購物車目前空空的喔！</p>`; 
+                calculateTotal(); 
+                return; 
+            } 
+            container.innerHTML = cart.map((box, i) => { 
+                const flavorDetailHtml = box.flavors.map(f => `${f.name} x ${f.quantity}個`).join('、'); 
+                return `
+                <div class="border border-stone-200 rounded-xl p-3 md:p-4 flex items-center justify-between gap-3 bg-stone-50/50">
+                    <div class="flex-1 min-w-0 space-y-0.5">
+                        <div class="font-extrabold text-sm md:text-base text-stone-900 tracking-wide">組合 ${i+1}：${box.boxName}</div>
+                        <div class="text-xs md:text-sm text-[#5B7290] font-bold leading-relaxed break-words">內含：${flavorDetailHtml}</div>
+                    </div>
+                    <div class="flex items-center gap-4 shrink-0">
+                        <div class="text-right"><span class="font-black text-sm md:text-base text-stone-950">$${box.boxTotalCost}</span></div>
+                        <button type="button" onclick="removeFromCart(${i})" class="bg-stone-100 text-stone-400 p-1.5 rounded-lg w-7 h-7 md:w-8 md:h-8 flex items-center justify-center font-bold text-xs md:text-sm cursor-pointer">✕</button>
+                    </div>
+                </div>`; 
+            }).join(''); 
+            calculateTotal(); 
+        }
+
         function calculateTotal() { let subtotal = 0; cart.forEach(box => { subtotal += box.boxTotalCost; }); document.getElementById('subtotalDisplay').innerText = `$${subtotal}`; const shipMethod = document.getElementById('shipMethod').value; let finalTotal = subtotal; if(shipMethod === 'delivery') finalTotal += shippingFee; if (appliedCoupon) { const minSpendRequirement = Number(appliedCoupon.min_spend) || 0; if (subtotal < minSpendRequirement) { appliedCoupon = null; const msgElement = document.getElementById('couponMessage'); msgElement.innerText = `✕ 組合變動，金額未達門檻 ${minSpendRequirement} 元，已自動取消折抵。`; msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-orange-500"; } } let discountAmount = 0; const couponDisplay = document.getElementById('couponDiscountDisplay'); if (appliedCoupon && subtotal > 0) { if (appliedCoupon.type === 'minus') { discountAmount = Number(appliedCoupon.value) || 0; } else if (appliedCoupon.type === 'discount') { discountAmount = Math.round(subtotal * (1 - Number(appliedCoupon.value))); } if (discountAmount > finalTotal) discountAmount = finalTotal; finalTotal -= discountAmount; couponDisplay.querySelector('span').innerText = `-$${discountAmount}`; couponDisplay.classList.remove('hidden'); } else { couponDisplay.classList.add('hidden'); } document.getElementById('totalDisplay').innerText = `$${finalTotal}`; return finalTotal; }
         function applyCouponCode(isUserClick = false) { const inputVal = document.getElementById('couponInput').value.trim().toUpperCase(); const msgElement = document.getElementById('couponMessage'); if (inputVal === "") { appliedCoupon = null; msgElement.classList.add('hidden'); calculateTotal(); return; } let subtotal = 0; cart.forEach(box => { subtotal += box.boxTotalCost; }); const match = localCoupons.find(c => c.code === inputVal); msgElement.classList.remove('hidden'); if (match) { const minSpendRequirement = Number(match.min_spend) || 0; if (subtotal < minSpendRequirement) { appliedCoupon = null; msgElement.innerText = `✕ 未達消費門檻！此折扣碼最低消費需滿 ${minSpendRequirement} 元。`; msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-orange-500"; if(isUserClick) alert(`未達此折扣碼的低消門檻 $${minSpendRequirement} 元！`); } else { appliedCoupon = match; msgElement.innerText = `✓ 成功套用折扣碼！(${match.type === 'minus' ? '現折 ' + match.value + ' 元' : '享 ' + (match.value * 10) + ' 折'})`; msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-emerald-600"; if(isUserClick) alert("折扣碼套用成功！"); } } else { appliedCoupon = null; msgElement.innerText = "✕ 折扣碼無效或已過期。"; msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-red-500"; } calculateTotal(); }
 
