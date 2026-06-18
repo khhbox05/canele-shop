@@ -148,7 +148,7 @@
                                 <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">配送方式 *</label>
                                 <select id="shipMethod" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] cursor-pointer h-12 md:h-14 bg-stone-50/50" onchange="handleShippingMethodChange()" required>
                                     <option value="store">門市自取付款</option>
-                                    <option value="delivery">7-11 店到店取貨 (冷凍運費另計)</option>
+                                    <!-- <option value="delivery">7-11 店到店取貨 (冷凍運費另計)</option> -->
                                 </select>
                             </div>
                             <div>
@@ -515,7 +515,7 @@
 
             document.getElementById('overlayMainTitle').innerText = "訂單準備送出中...";
             document.getElementById('overlaySubTitle').innerText = "倒數結束前可隨時確認或調整";
-            document.getElementById('overlayBottomPrompt').innerText = "正在排隊鎖定甜點庫存。";
+            document.getElementById('overlayBottomPrompt').innerText = "正在確認甜點庫存。";
             document.getElementById('countdownTimer').style.display = 'block';
             document.getElementById('loadingAnimationBlock').style.display = 'none';
             document.getElementById('overlayActionButtons').style.display = 'flex';
@@ -601,20 +601,20 @@
                             重要提醒：請務必留存或截圖此訂購明細！方便您取貨時確認內容。
                         </div>
                         <div class="space-y-3 text-stone-700 text-sm font-mono">
-                            <div><strong>預購單編號：</strong>${orderId}</div>
+                            <div><strong>預購編號：</strong>${orderId}</div>
                             <div><strong>顧客姓名：</strong>${custName}</div>
-                            <div><strong>聯絡手機：</strong>${custPhone}</div>
-                            <div><strong>配送管道：</strong>${methodText}</div>
+                            <div><strong>聯絡電話：</strong>${custPhone}</div>
+                            <div><strong>配送方式：</strong>${methodText}</div>
                             <div><strong>取貨地址：</strong>${finalDatabaseAddress}</div>
                             <div><strong>${dateLabelText}：</strong>${shipDate}</div>
                         </div>
                         <div class="border-t border-dashed border-stone-200 my-4 pt-4 text-sm font-mono text-stone-600 space-y-1">
-                            <div class="font-bold text-stone-800 mb-1">甜點組合明細：</div>${cartDetailsHtml}
+                            <div class="font-bold text-stone-800 mb-1">購物明細：</div>${cartDetailsHtml}
                         </div>
-                        <div class="text-right text-lg font-black text-[#5B7290] pt-2 border-t border-stone-100 mb-4">結帳總金額：$${finalTotal} 元</div>
+                        <div class="text-right text-lg font-black text-[#5B7290] pt-2 border-t border-stone-100 mb-4">總金額：$${finalTotal} 元</div>
                         
                         <div class="text-sm font-medium text-stone-600 leading-relaxed bg-stone-50 border border-stone-200 p-4 rounded-xl">
-                            如需要修改訂單內容，請私訊 Lilou 官方 LINE 或 Instagram，我們將人工為您調整，謝謝您的購買與配合^___^
+                            如需要修改訂單內容，請私訊 Lilou 官方 LINE 或 Instagram，我們將人工為您調整，謝謝您的購買與配合😀
                         </div>
                     `;
                     document.getElementById('receiptContainer').classList.remove('hidden');
