@@ -34,7 +34,7 @@
             margin: 0 auto;
         }
         @keyframes spin {
-            0 { transform: rotate(0deg); }
+            0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
     </style>
@@ -57,7 +57,7 @@
 
         let submissionTimeout = null;
         let submissionInterval = null;
-        let countdownSeconds = 10;
+        let countdownSeconds = 20;
 
         let pendingOrderSnapshot = null;
     </script>
@@ -148,7 +148,7 @@
                                 <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">配送方式 *</label>
                                 <select id="shipMethod" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] cursor-pointer h-12 md:h-14 bg-stone-50/50" onchange="handleShippingMethodChange()" required>
                                     <option value="store">門市自取付款</option>
-                                    <!-- <option value="delivery">7-11 店到店取貨 (冷凍運費另計)</option> -->
+                                    <option value="delivery">7-11 店到店取貨 (冷凍運費另計)</option>
                                 </select>
                             </div>
                             <div>
@@ -226,7 +226,7 @@
                 <p id="overlaySubTitle" class="text-xs text-stone-400 font-bold uppercase tracking-wider">倒數結束前可隨時確認或調整</p>
             </div>
             
-            <div class="text-6xl font-black text-[#5B7290] animate-bounce py-1" id="countdownTimer">10</div>
+            <div class="text-6xl font-black text-[#5B7290] animate-bounce py-1" id="countdownTimer">20</div>
             
             <div class="bg-stone-50 border border-stone-200 p-4 rounded-xl text-left space-y-3 text-sm md:text-base text-stone-700 leading-relaxed font-sans">
                 <div>
@@ -248,7 +248,7 @@
                 <p class="text-xs text-[#5B7290] font-black tracking-wider animate-pulse">送出訂單中...</p>
             </div>
 
-            <p id="overlayBottomPrompt" class="text-[11px] text-stone-400 leading-relaxed font-medium">正在向雲端防搶系統排隊鎖定甜點庫存。</p>
+            <p id="overlayBottomPrompt" class="text-[11px] text-stone-400 leading-relaxed font-medium">正確認商品庫存。</p>
             
             <div id="overlayActionButtons" class="flex gap-2.5 pt-1">
                 <button type="button" onclick="cancelOrderSubmission()" class="flex-1 border border-stone-200 text-stone-500 font-bold h-12 rounded-xl hover:bg-stone-50 transition-colors text-xs md:text-sm uppercase shadow-2xs cursor-pointer">
@@ -506,7 +506,6 @@
 
             const methodText = shipMethodVal === 'delivery' ? `7-11 店到店 (${custAddress})` : `門市自取付款 (高雄市前鎮區景德路72巷12號)`;
             
-            // 💡 根據配送方式，動態調整倒數畫面的日期標籤
             const dateLabelObj = document.getElementById('overlayDateLabel');
             if (shipMethodVal === 'delivery') {
                 dateLabelObj.innerText = "希望到貨日期：";
@@ -527,7 +526,7 @@
 
             pendingOrderSnapshot = { orderId, custName, custPhone, shipDate, shipMethodVal, custAddress, finalTotal };
 
-            countdownSeconds = 10; 
+            countdownSeconds = 20; 
             document.getElementById('countdownTimer').innerText = countdownSeconds;
             document.getElementById('countdownOverlay').classList.remove('hidden');
 
@@ -544,7 +543,7 @@
                 clearInterval(submissionInterval);
                 switchToLoadingState();
                 await executeBackendPost(orderId, custName, custPhone, shipDate, shipMethodVal, custAddress, finalTotal);
-            }, 10000); 
+            }, 20000); 
         }
 
         function switchToLoadingState() {
@@ -600,7 +599,7 @@
                     document.getElementById('receiptContent').innerHTML = `
                         <div class="mb-4 text-sm font-bold text-amber-900 leading-relaxed bg-amber-50 border border-amber-200 p-4 rounded-xl shadow-xs">
                             ⚠️ 重要注意事項：<br>
-                            請務必留存或截圖此訂購明細！方便您取貨時確認內容。如需要修改訂單內容，請私訊 Lilou 官方 LINE 或 Instagram，我們將人工為您調整，謝謝您的購買與配合^___^
+                            請務必留存或截圖此訂購明細！方便您取貨時確認內容。
                         </div>
                         <div class="space-y-3 text-stone-700 text-sm font-mono">
                             <div><strong>預購單編號：</strong>${orderId}</div>
@@ -613,7 +612,11 @@
                         <div class="border-t border-dashed border-stone-200 my-4 pt-4 text-sm font-mono text-stone-600 space-y-1">
                             <div class="font-bold text-stone-800 mb-1">甜點組合明細：</div>${cartDetailsHtml}
                         </div>
-                        <div class="text-right text-lg font-black text-[#5B7290] pt-2 border-t border-stone-100">結帳總金額：$${finalTotal} 元</div>
+                        <div class="text-right text-lg font-black text-[#5B7290] pt-2 border-t border-stone-100 mb-4">結帳總金額：$${finalTotal} 元</div>
+                        
+                        <div class="text-sm font-medium text-stone-600 leading-relaxed bg-stone-50 border border-stone-200 p-4 rounded-xl">
+                            ℹ️ 如需要修改訂單內容，請私訊 Lilou 官方 LINE 或 Instagram，我們將人工為您調整，謝謝您的購買與配合^___^
+                        </div>
                     `;
                     document.getElementById('receiptContainer').classList.remove('hidden');
                     cart = []; appliedCoupon = null; 
