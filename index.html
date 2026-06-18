@@ -625,7 +625,7 @@
                 document.getElementById('countdownOverlay').classList.add('hidden');
                 
                 if(result.status === "success") {
-                    alert("預購單送出成功！已為您保留限量數量。");
+                    alert("預購單送出成功！已為您保留商品。");
                     document.getElementById('formContainer').classList.add('hidden');
                     let cartDetailsHtml = cart.map((box, idx) => { const flavorsStr = box.flavors.map(f => `${f.name} x ${f.quantity}個`).join('、'); return `<div>組合 ${idx + 1} [${box.boxName}]：${flavorsStr}</div>`; }).join('');
                     const methodText = shipMethodVal === 'delivery' ? '7-11 店到店取貨' : '門市自取付款';
@@ -644,7 +644,7 @@
                             <div class="font-bold text-stone-800 mb-1">甜點組合明細：</div>${cartDetailsHtml}
                         </div>
                         <div class="text-right text-lg font-black text-[#5B7290] pt-2 border-t border-stone-100">結帳總金額：$${finalTotal} 元</div>
-                        <div class="mt-6 text-xs text-stone-400 leading-relaxed bg-stone-50 p-3 rounded-lg">請留存此訂購明細！方便您取貨時確認內容。如需要修改訂單內容，請私訊 Lilou 官方 LINE 或 Instagram，我們將人工為您調整，謝謝您的購買與配合。</div>
+                        <div class="mt-6 text-xs text-stone-400 leading-relaxed bg-stone-50 p-3 rounded-lg">請留存此訂購明細！方便您取貨時確認內容。如需要修改訂單內容，請私訊Lilou官方 LINE 或 Instagram，我們將人工為您調整，謝謝您的購買與配合^___^</div>
                     `;
                     document.getElementById('receiptContainer').classList.remove('hidden');
                     cart = []; appliedCoupon = null; 
