@@ -344,6 +344,18 @@
             calculateTotal();
         }
 
+        // 헬퍼 函數：取得星期字串
+        function getWeekdayStr(dateStr) {
+            try {
+                const parsedDate = new Date(dateStr.trim());
+                if (!isNaN(parsedDate)) {
+                    const weekday = ["日", "一", "二", "三", "四", "五", "六"][parsedDate.getDay()];
+                    return ` (週${weekday})`;
+                }
+            } catch (e) {}
+            return "";
+        }
+
         function renderAvailableDates(method) {
             const dateSelect = document.getElementById('shipDate');
             const textPrompt = method === 'delivery' ? '希望到貨日期' : '自取日期';
@@ -366,8 +378,8 @@
                 targetDates.forEach(dateStr => {
                     const cleanDate = dateStr.trim();
                     if(cleanDate !== "") {
-                        let weekdayStr = ""; 
                         let isDateValid = true;
+                        let wStr = "";
                         try {
                             const parsedDate = new Date(cleanDate);
                             if(!isNaN(parsedDate)) {
@@ -376,7 +388,7 @@
                                     isDateValid = false; 
                                 }
                                 const weekday = ["日", "一", "二", "三", "四", "五", "六"][checkDateMidnight.getDay()];
-                                weekdayStr = ` (週${weekday})`;
+                                wStr = ` (週${weekday})`;
                             } else { 
                                 isDateValid = false; 
                             }
@@ -384,7 +396,8 @@
                             isDateValid = false; 
                         }
                         if (isDateValid) { 
-                            optionsHtml += `<option value="${cleanDate}">${cleanDate}${weekdayStr}</option>`; 
+                            // value 只保留乾淨的 YYYY-MM-DD，而呈現給使用者看的文字加上星期
+                            optionsHtml += `<option value="${cleanDate}">${cleanDate}${wStr}</option>`; 
                             hasValidDate = true; 
                         }
                     }
@@ -475,7 +488,7 @@
                 } 
             } 
             if (hasError) return; 
-            if(totalFlavorsCountInBox === 0) { alert("此組合內還沒有放入任何甜點喔！"); return; } 
+            if(totalFlavorsCountInBox === 0) { alert("此組合內還沒有放入 any 甜點喔！"); return; } 
             if (currentBoxLimit && totalFlavorsCountInBox !== currentBoxLimit) { alert(`數量不符！「${boxName}」必須剛好裝滿 ${currentBoxLimit} 個品項。`); return; } 
             cart.push({ boxName: boxName, boxExtra: boxExtra, flavors: boxFlavors, flavorsCost: boxFlavorsCost, totalQty: totalFlavorsCountInBox, boxTotalCost: boxFlavorsCost + boxExtra }); 
             alert(`成功打包放入明細！`); 
@@ -511,7 +524,6 @@
             calculateTotal(); 
         }
 
-        font_bold = false;
         function calculateTotal() { let subtotal = 0; cart.forEach(box => { subtotal += box.boxTotalCost; }); document.getElementById('subtotalDisplay').innerText = `$${subtotal}`; const shipMethod = document.getElementById('shipMethod').value; let finalTotal = subtotal; if(shipMethod === 'delivery') finalTotal += shippingFee; if (appliedCoupon) { const minSpendRequirement = Number(appliedCoupon.min_spend) || 0; if (subtotal < minSpendRequirement) { appliedCoupon = null; const msgElement = document.getElementById('couponMessage'); msgElement.innerText = `✕ 組合變動，金額未達門檻 ${minSpendRequirement} 元，已自動取消折抵。`; msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-orange-500"; } } let discountAmount = 0; const couponDisplay = document.getElementById('couponDiscountDisplay'); if (appliedCoupon && subtotal > 0) { font_bold = true; if (appliedCoupon.type === 'minus') { discountAmount = Number(appliedCoupon.value) || 0; } else if (appliedCoupon.type === 'discount') { discountAmount = Math.round(subtotal * (1 - Number(appliedCoupon.value))); } if (discountAmount > finalTotal) discountAmount = finalTotal; finalTotal -= discountAmount; couponDisplay.querySelector('span').innerText = `-$${discountAmount}`; couponDisplay.classList.remove('hidden'); } else { couponDisplay.classList.add('hidden'); } document.getElementById('totalDisplay').innerText = `$${finalTotal}`; return finalTotal; }
         function applyCouponCode(isUserClick = false) { const inputVal = document.getElementById('couponInput').value.trim().toUpperCase(); const msgElement = document.getElementById('couponMessage'); if (inputVal === "") { appliedCoupon = null; msgElement.classList.add('hidden'); calculateTotal(); return; } let subtotal = 0; cart.forEach(box => { subtotal += box.boxTotalCost; }); const match = localCoupons.find(c => c.code === inputVal); msgElement.classList.remove('hidden'); if (match) { const minSpendRequirement = Number(match.min_spend) || 0; if (subtotal < minSpendRequirement) { appliedCoupon = null; msgElement.innerText = `✕ 未達消費門檻！此折扣碼最低消費需滿 ${minSpendRequirement} 元。`; msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-orange-500"; if(isUserClick) alert(`未達此折扣碼的低消門檻 $${minSpendRequirement} 元！`); } else { appliedCoupon = match; msgElement.innerText = `✓ 成功套用折扣碼！(${match.type === 'minus' ? '現折 ' + match.value + ' 元' : '享 ' + (match.value * 10) + ' 折'})`; msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-emerald-600"; if(isUserClick) alert("折扣碼套用成功！"); } } else { appliedCoupon = null; msgElement.innerText = "✕ 折扣碼無效或已過期。"; msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-red-500"; } calculateTotal(); }
 
@@ -524,7 +536,11 @@
             const custName = document.getElementById('custName').value.trim();
             const custPhone = document.getElementById('custPhone').value.trim();
             const shipMethodVal = document.getElementById('shipMethod').value;
-            const shipDate = document.getElementById('shipDate').value;
+            const rawShipDate = document.getElementById('shipDate').value;
+            
+            // 🌟 這裡自動計算並為日期加上星期
+            const shipDateWithWeekday = rawShipDate + getWeekdayStr(rawShipDate);
+
             const custAddress = document.getElementById('custAddress').value.trim();
             const finalTotal = calculateTotal();
             const orderId = "ORD" + new Date().getTime();
@@ -546,10 +562,12 @@
             document.getElementById('overlayActionButtons').style.display = 'flex';
 
             document.getElementById('overlayMethod').innerText = methodText;
-            document.getElementById('overlayDate').innerText = shipDate;
+            
+            // 🌟 讓倒數確認畫面的日期也帶有星期
+            document.getElementById('overlayDate').innerText = shipDateWithWeekday;
             document.getElementById('overlayTotal').innerText = `$${finalTotal} 元`;
 
-            pendingOrderSnapshot = { orderId, custName, custPhone, shipDate, shipMethodVal, custAddress, finalTotal };
+            pendingOrderSnapshot = { orderId, custName, custPhone, shipDate: shipDateWithWeekday, shipMethodVal, custAddress, finalTotal };
 
             countdownSeconds = 20; 
             document.getElementById('countdownTimer').innerText = countdownSeconds;
@@ -567,7 +585,7 @@
             submissionTimeout = setTimeout(async () => {
                 clearInterval(submissionInterval);
                 switchToLoadingState();
-                await executeBackendPost(orderId, custName, custPhone, shipDate, shipMethodVal, custAddress, finalTotal);
+                await executeBackendPost(orderId, custName, custPhone, shipDateWithWeekday, shipMethodVal, custAddress, finalTotal);
             }, 20000); 
         }
 
@@ -621,6 +639,7 @@
                     const methodText = shipMethodVal === 'delivery' ? '7-11 店到店取貨' : '門市自取付款';
                     const dateLabelText = shipMethodVal === 'delivery' ? '希望到貨日期' : '自取日期';
 
+                    // 🌟 最終確認單（收據）中也會精準顯示帶有星期的日期
                     document.getElementById('receiptContent').innerHTML = `
                         <div class="mb-4 text-sm font-bold text-amber-900 leading-relaxed bg-amber-50 border border-amber-200 p-4 rounded-xl shadow-xs">
                             重要提醒：請務必留存或截圖此訂購明細！方便您取貨時確認內容。
