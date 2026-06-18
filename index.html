@@ -55,7 +55,7 @@
             <h1 class="text-xl md:text-2xl font-black tracking-widest cursor-pointer" onclick="window.location.reload()">Lilou</h1>
             <div class="flex items-center gap-6 font-bold tracking-widest text-xs md:text-sm">
                 <button type="button" id="navShopBtn" onclick="switchMode('shop')" class="cursor-pointer transition-all duration-200 border-b-2 border-white pb-0.5 text-white">
-                    淺要購物
+                    我要購物
                 </button>
                 <button type="button" id="navSearchBtn" onclick="switchMode('search')" class="cursor-pointer transition-all duration-200 border-b-2 border-transparent pb-0.5 text-white/70 hover:text-white">
                     查詢訂單
@@ -199,7 +199,7 @@
                     <h3 class="text-sm md:text-base font-black text-[#5B7290] tracking-wider uppercase">快速查詢預購單</h3>
                 </div>
                 <div class="flex gap-2">
-                    <input type="tel" id="searchPhoneInput" class="flex-1 px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 bg-stone-50/50 font-bold transition-all" placeholder="請輸入訂購時的手機號碼">
+                    <input type="tel" id="searchPhoneInput" class="flex-1 px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 bg-stone-50/50 font-bold transition-all text-stone-800" placeholder="請輸入訂購時的手機號碼">
                     <button type="button" onclick="searchOrdersByPhone()" class="bg-[#5B7290] text-white font-bold px-6 rounded-xl hover:bg-[#3E4F66] transition-all text-sm md:text-base shrink-0 cursor-pointer h-12">
                         查詢
                     </button>
@@ -464,7 +464,6 @@
 
         function removeFromCart(cartIdx) { cart.splice(cartIdx, 1); renderFlavorMenu(); renderCart(); }
 
-        // 💡 100% 完好加回反引號修復版：徹底解決明細不出現與壞掉的問題！
         function renderCart() { 
             const container = document.getElementById('cartListContainer'); 
             if(cart.length === 0) { 
@@ -590,7 +589,58 @@
         }
 
         function cancelOrderSubmission() { if (submissionTimeout) clearTimeout(submissionTimeout); if (submissionInterval) clearInterval(submissionInterval); pendingOrderSnapshot = null; document.getElementById('countdownOverlay').classList.add('hidden'); alert("已成功取消本次傳送！資料皆完整保留，您可以重新調整訂單內容。"); }
-        async function searchOrdersByPhone() { const phone = document.getElementById('searchPhoneInput').value.trim(); if (!phone) { alert("請輸入手機號碼！"); return; } const listContainer = document.getElementById('searchResultList'); const area = document.getElementById('searchResultArea'); listContainer.innerHTML = `<p class="text-stone-400 text-center py-4 text-xs animate-pulse">正在搜尋雲端訂單紀錄...</p>`; area.classList.remove('hidden'); try { const res = await fetch(`${API_URL}?action=queryOrders&phone=${phone}`); const result = await res.json(); if (result.status === "success" && result.data.length > 0) { listContainer.innerHTML = result.data.map((order, idx) => `<div class="border border-stone-200 rounded-xl bg-stone-50/50 overflow-hidden text-left"><div onclick="toggleOrderDetailDisplay(${idx})" class="p-3 md:p-4 flex justify-between items-center cursor-pointer hover:bg-stone-100/50 transition-colors"><div class="space-y-0.5"><div class="text-xs text-stone-400 font-mono">${order.date}</div><div class="font-extrabold text-sm text-stone-900 font-mono">${order.id}</div></div><div class="font-black text-sm md:text-base text-[#5B7290]">${order.total} 元 ▽</div></div><div id="orderDetailBlock_${idx}" class="hidden p-4 bg-white border-t border-stone-100 text-xs md:text-sm text-stone-600 space-y-2 font-mono whitespace-pre-line"><strong>訂購姓名：</strong>${order.name} <strong>配送管道：</strong>${order.method === "Store Pickup" ? "門市自取付款" : "7-11 店到店取貨"}${order.address ? `\n<strong>取貨門市：</strong>${order.address}` : ''}\n<strong>甜點明細：</strong>\n${order.details}\n${order.note ? `<strong>備註事項：</strong>${order.note}` : ''}</div></div>`).join(''); } else { listContainer.innerHTML = `<p class="text-stone-400 text-center py-4 text-xs">查無此手機號碼的預購紀錄。</p>`; } } catch (err) { listContainer.innerHTML = `<p class="text-red-400 text-center py-4 text-xs">查詢失敗，請稍後再試。</p>`; } }
+        
+        // =================================================================
+        // 🚀 核心優化修復：查單手機完全「全數字強效清洗 + 網址安全編碼（URL Encode）」
+        // =================================================================
+        async function searchOrdersByPhone() { 
+            const rawPhone = document.getElementById('searchPhoneInput').value; 
+            // 💡 關鍵修復：在前端就將輸入的號碼洗成純數字（如將 "0981-063-531" 徹底洗成 "0981063531"）
+            const phone = rawPhone.toString().replace(/[^0-9]/g, '').trim();
+            
+            if (!phone) { 
+                alert("請輸入正確的手機號碼！"); 
+                return; 
+            } 
+            
+            const listContainer = document.getElementById('searchResultList'); 
+            const area = document.getElementById('searchResultArea'); 
+            
+            listContainer.innerHTML = `<p class="text-stone-400 text-center py-4 text-xs animate-pulse">正在搜尋雲端訂單紀錄...</p>`; 
+            area.classList.remove('hidden'); 
+            
+            try {
+                // 💡 關鍵保險：加上 encodeURIComponent 強制網址編碼，確保號碼傳輸到 Google 後台時 100% 絕對不變質不漏字
+                const res = await fetch(`${API_URL}?action=queryOrders&phone=${encodeURIComponent(phone)}`); 
+                const result = await res.json(); 
+                
+                if (result.status === "success" && result.data.length > 0) { 
+                    listContainer.innerHTML = result.data.map((order, idx) => `
+                        <div class="border border-stone-200 rounded-xl bg-stone-50/50 overflow-hidden text-left">
+                            <div onclick="toggleOrderDetailDisplay(${idx})" class="p-3 md:p-4 flex justify-between items-center cursor-pointer hover:bg-stone-100/50 transition-colors">
+                                <div class="space-y-0.5">
+                                    <div class="text-xs text-stone-400 font-mono">${order.date}</div>
+                                    <div class="font-extrabold text-sm text-stone-900 font-mono">${order.id}</div>
+                                </div>
+                                <div class="font-black text-sm md:text-base text-[#5B7290]">${order.total} 元 ▽</div>
+                            </div>
+                            <div id="orderDetailBlock_${idx}" class="hidden p-4 bg-white border-t border-stone-100 text-xs md:text-sm text-stone-600 space-y-2 font-mono whitespace-pre-line">
+                                <strong>訂購姓名：</strong>${order.name} 
+                                <strong>配送管道：</strong>${order.method === "Store Pickup" ? "門市自取付款" : "7-11 店到店取貨"}
+                                ${order.address ? `\n<strong>取貨門市：</strong>${order.address}` : ''}
+                                \n<strong>甜點明細：</strong>\n${order.details}
+                                \n${order.note ? `<strong>備註事項：</strong>${order.note}` : ''}
+                            </div>
+                        </div>
+                    `).join(''); 
+                } else { 
+                    listContainer.innerHTML = `<p class="text-stone-400 text-center py-4 text-xs">查無此手機號碼的預購紀錄。</p>`; 
+                } 
+            } catch (err) { 
+                listContainer.innerHTML = `<p class="text-red-400 text-center py-4 text-xs">查詢失敗，請稍後再試。</p>`; 
+            } 
+        }
+
         function toggleOrderDetailDisplay(idx) { const block = document.getElementById(`orderDetailBlock_${idx}`); block.classList.toggle('hidden'); }
         function shareReceipt() { const receiptText = document.getElementById('receiptContent').innerText; if (navigator.share) { navigator.share({ title: 'Lilou 預購收據確認單', text: '這是我在 Lilou 的甜點預購單明細紀錄：\n\n' + receiptText, }).then(() => console.log('分享成功')).catch((error) => console.log('使用者取消分享', error)); } else { window.print(); } }
         fetchOptions();
