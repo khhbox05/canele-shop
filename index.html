@@ -151,7 +151,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label id="dateLabel" class="block text-xs md:text-sm font-bold text-[#5B7290] mb-1.5">門市自取日期 *</label>
+                                <label class="block text-xs md:text-sm font-bold text-[#5B7290] mb-1.5">門市自取日期 *</label>
                                 <select id="shipDate" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] bg-white font-bold text-stone-800 cursor-pointer h-12 md:h-14" required>
                                     <option value="" disabled selected>正在載入可用日期...</option>
                                 </select>
@@ -165,7 +165,7 @@
                                     開啟 7-11 門市地圖查詢
                                 </a>
                             </div>
-                            <input type="text" id="custAddress" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none h-12 md:h-14 bg-stone-100 font-bold text-stone-700 select-all" value="高雄市前鎮區景德路72巷12號 (營業時間 14:00-18:00)" readonly>
+                            <input type="text" id="custAddress" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none h-12 md:h-14 bg-stone-100 font-bold text-stone-700 select-all" value="高雄市前鎮區景德路72巷12號" readonly>
                         </div>
 
                         <div>
@@ -447,18 +447,60 @@
         function renderFlavorMenu() {
             const fMenu = document.getElementById('flavorMenu'); const boxSelect = document.getElementById('boxSelect');
             const isBoxNotSelected = (boxSelect.value === ""); const bName = boxSelect.value;
-            const isBoxWithFinancier = bName.includes("費南雪"); const isBoxWithCanelé = bName.includes("大顆");
             fMenu.innerHTML = localProducts.map((p, idx) => {
                 let occupiedInCart = 0; cart.forEach(savedBox => { const matchFlavor = savedBox.flavors.find(f => f.name === p.name); if (matchFlavor) occupiedInCart += matchFlavor.quantity; });
                 const virtualStock = p.stock - occupiedInCart; let isHidden = false;
-                if (isBoxWithFinancier) { if (!p.name.includes("費南雪")) isHidden = true; } else if (isBoxWithCanelé) { if (!p.name.includes("大顆")) isHidden = true; } else { if (p.name.includes("費南雪") || p.name.includes("大顆")) isHidden = true; }
+                
+                // 🚀 只針對「限定」包裝進行商品口味過濾
+                if (bName.includes("限定") && !p.name.includes("限")) {
+                    isHidden = true;
+                }
+                
                 if (isHidden) return ''; const shouldDisable = virtualStock <= 0 || isBoxNotSelected; let statusText = '剩 ' + (virtualStock >= 0 ? virtualStock : 0);
                 return `<div class="flex items-center justify-between py-3 gap-2"><div class="flex-1 min-w-0"><span class="font-bold text-stone-900 text-sm md:text-base break-words block">${p.name}</span><span class="text-[#5B7290] font-black text-sm md:text-base">$${p.price}</span><span class="text-[10px] md:text-xs ${virtualStock <= 0 ? 'text-red-500 font-bold' : 'text-stone-400'} ml-0.5">${statusText}</span></div><div class="shrink-0 flex items-center bg-stone-100 rounded-xl p-0.5 border border-stone-200 ${(isBoxNotSelected || shouldDisable) ? 'opacity-30 select-none' : ''}"><button type="button" onclick="stepFlavorQty(${idx}, -1)" ${shouldDisable ? 'disabled' : ''} class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center font-black text-stone-600 hover:text-stone-900 bg-white rounded-lg shadow-2xs active:bg-stone-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm md:text-base">—</button><input type="number" id="flavorQty_${idx}" data-idx="${idx}" min="0" max="${virtualStock >= 0 ? virtualStock : 0}" value="0" readonly class="flavor-input w-10 md:w-12 text-center text-sm md:text-base font-black bg-transparent border-0 focus:outline-none h-8 select-none pointer-events-none text-stone-800"><button type="button" id="plusBtn_${idx}" onclick="stepFlavorQty(${idx}, 1)" ${shouldDisable ? 'disabled' : ''} class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center font-black text-stone-600 hover:text-stone-900 bg-white rounded-lg shadow-2xs active:bg-stone-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm md:text-base">＋</button></div></div>`;
             }).join('');
         }
 
         window.stepFlavorQty = function(idx, change) { const input = document.getElementById(`flavorQty_${idx}`); if (!input) return; let currentVal = parseInt(input.value) || 0; let newVal = currentVal + change; const maxStock = parseInt(input.max) || 0; if (newVal < 0) newVal = 0; if (newVal > maxStock) newVal = maxStock; input.value = newVal; calculateCurrentBoxTotal(input, idx, currentVal); }
-        window.handleBoxChange = function() { const boxSelect = document.getElementById('boxSelect'); if(boxSelect.value !== "") { const bVal = boxSelect.value; if (bVal.includes("單入") || bVal.includes("個別") || bVal.includes("免禮盒")) { currentBoxLimit = null; } else { const match = bVal.match(/\d+/); currentBoxLimit = null; currentBoxLimit = match ? parseInt(match[0]) : null; } } else { currentBoxLimit = null; } const bName = boxSelect.value; let hasViolation = false; localProducts.forEach((p, idx) => { const qtyInput = document.getElementById(`flavorQty_${idx}`); if (qtyInput && parseInt(qtyInput.value) > 0) { if (bName.includes("費南雪") && !p.name.includes("費南雪")) { hasViolation = true; } else if (bName.includes("大顆") && !p.name.includes("大顆")) { hasViolation = true; } else if (!bName.includes("費南雪") && !bName.includes("大顆") && (p.name.includes("費南雪") || p.name.includes("大顆"))) { hasViolation = true; } } }); if (hasViolation) { alert("【包裝商品不符】已為您切換商品組合選單。系統已自動重設目前輸入的甜點欄位，並為您重新隱藏不適用的口味。"); document.querySelectorAll('.flavor-input').forEach(input => input.value = "0"); } document.querySelectorAll('.flavor-input').forEach(input => { if(boxSelect.value === "") input.value = "0"; }); renderFlavorMenu(); calculateTotal(); calculateCurrentBoxTotal(null); }
+        
+        window.handleBoxChange = function() { 
+            const boxSelect = document.getElementById('boxSelect'); 
+            if(boxSelect.value !== "") { 
+                const bVal = boxSelect.value; 
+                if (bVal.includes("單入") || bVal.includes("個別") || bVal.includes("免禮盒")) { 
+                    currentBoxLimit = null; 
+                } else { 
+                    const match = bVal.match(/\d+/); 
+                    currentBoxLimit = null; 
+                    currentBoxLimit = match ? parseInt(match[0]) : null; 
+                } 
+            } else { 
+                currentBoxLimit = null; 
+            } 
+            
+            const bName = boxSelect.value; 
+            let hasViolation = false; 
+            localProducts.forEach((p, idx) => { 
+                const qtyInput = document.getElementById(`flavorQty_${idx}`); 
+                if (qtyInput && parseInt(qtyInput.value) > 0) { 
+                    // 🚀 如果切換包裝名稱有「限定」，但目前已有輸入數量的商品名字沒有「限」字，就是不符規則
+                    if (bName.includes("限定") && !p.name.includes("限")) { 
+                        hasViolation = true; 
+                    } 
+                } 
+            }); 
+            
+            if (hasViolation) { 
+                alert("【包裝商品不符】已為您切換商品組合選單。系統已自動重設目前輸入的甜點欄位，並為您重新隱藏不適用的口味。"); 
+                document.querySelectorAll('.flavor-input').forEach(input => input.value = "0"); 
+            } 
+            
+            document.querySelectorAll('.flavor-input').forEach(input => { if(boxSelect.value === "") input.value = "0"; }); 
+            renderFlavorMenu(); 
+            calculateTotal(); 
+            calculateCurrentBoxTotal(null); 
+        }
+        
         function calculateCurrentBoxTotal(currentInputObj, changedIdx = null, previousVal = 0) { const inputs = document.querySelectorAll('.flavor-input'); let currentTotal = 0; inputs.forEach(input => { currentTotal += (parseInt(input.value) || 0); }); if (currentBoxLimit && currentTotal > currentBoxLimit) { if (currentInputObj && changedIdx !== null) { alert(`數量超標！此組合限制容量為 ${currentBoxLimit} 個。`); currentInputObj.value = previousVal; currentTotal = 0; inputs.forEach(input => { currentTotal += (parseInt(input.value) || 0); }); } } const display = document.getElementById('currentBoxCountDisplay'); if (currentBoxLimit) { display.innerText = `已選: ${currentTotal} / ${currentBoxLimit} 個`; inputs.forEach(input => { const idx = parseInt(input.getAttribute('data-idx')); const product = localProducts[idx]; if (!product) return; let occupiedInCart = 0; cart.forEach(savedBox => { const matchFlavor = savedBox.flavors.find(f => f.name === product.name); if (matchFlavor) occupiedInCart += matchFlavor.quantity; }); const virtualStock = product.stock - occupiedInCart; const selfValue = parseInt(input.value) || 0; let allowedMax = selfValue + (currentBoxLimit - currentTotal); if (allowedMax > virtualStock) allowedMax = virtualStock; input.max = allowedMax >= 0 ? allowedMax : 0; }); } else { const boxSelect = document.getElementById('boxSelect'); display.innerText = boxSelect.value === "" ? "請先挑選包裝類型" : `已選: ${currentTotal} 個`; } return currentTotal; }
         
         window.packBoxToCart = function() { 
@@ -497,6 +539,21 @@
         }
 
         window.removeFromCart = function(cartIdx) { cart.splice(cartIdx, 1); renderFlavorMenu(); renderCart(); }
+
+        document.getElementById('cartListContainer').innerHTML = cart.map((box, i) => { 
+            const flavorDetailHtml = box.flavors.map(f => `${f.name} x ${f.quantity}個`).join('、'); 
+            return `
+            <div class="border border-stone-200 rounded-xl p-3 md:p-4 flex items-center justify-between gap-3 bg-stone-50/50">
+                <div class="flex-1 min-w-0 space-y-0.5">
+                    <div class="font-extrabold text-sm md:text-base text-stone-900 tracking-wide">組合 ${i+1}：${box.boxName}</div>
+                    <div class="text-xs md:text-sm text-[#5B7290] font-bold leading-relaxed break-words">內含：${flavorDetailHtml}</div>
+                </div>
+                <div class="flex items-center gap-4 shrink-0">
+                    <div class="text-right"><span class="font-black text-sm md:text-base text-stone-950">$${box.boxTotalCost}</span></div>
+                    <button type="button" onclick="removeFromCart(${i})" class="bg-stone-100 text-stone-400 p-1.5 rounded-lg w-7 h-7 md:w-8 md:h-8 flex items-center justify-center font-bold text-xs md:text-sm cursor-pointer">✕</button>
+                </div>
+            </div>`; 
+        }).join(''); 
 
         function renderCart() { 
             const container = document.getElementById('cartListContainer'); 
@@ -681,7 +738,7 @@
                         <div class="text-right text-lg font-black text-[#5B7290] pt-2 border-t border-stone-100 mb-4">總金額：$${finalTotal} 元</div>
                         
                         <div class="text-sm font-medium text-stone-600 leading-relaxed bg-stone-50 border border-stone-200 p-4 rounded-xl">
-                            如需要修改訂單內容，請私訊 Lilou 官方 LINE 或 Instagram，我們將人工為您調整。謝謝您的購買😀
+                            如需要修改訂單內容，請私訊 Lilou 官方 LINE 或 Instagram，我們將人工為您調整，謝謝您的購買😀
                         </div>
                     `;
                     document.getElementById('receiptContainer').classList.remove('hidden');
