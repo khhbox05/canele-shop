@@ -52,11 +52,10 @@
     <nav class="bg-[#5B7290] text-white p-4 md:p-5 shadow-sm sticky top-0 z-50 backdrop-blur-md bg-opacity-95">
         <div class="max-w-3xl mx-auto flex justify-between items-center">
             <h1 class="text-xl md:text-2xl font-black tracking-widest cursor-pointer" onclick="window.location.reload()">Lilou</h1>
-            <div class="flex items-center gap-3">
-                <button type="button" onclick="triggerAndScrollToSearch()" class="text-xs md:text-sm bg-white/10 hover:bg-white/20 border border-white/20 px-3 py-1.5 rounded-xl font-bold tracking-wider cursor-pointer transition-all">
+            <div>
+                <button type="button" onclick="triggerAndScrollToSearch()" class="text-xs md:text-sm bg-white/10 hover:bg-white/20 border border-white/20 px-3.5 py-1.5 rounded-xl font-bold tracking-wider cursor-pointer transition-all">
                     查詢訂單
                 </button>
-                <span class="hidden md:inline text-xs border border-white/40 px-3.5 py-1 rounded-full text-white/90 tracking-wider font-medium shrink-0">ONLINE SHOP</span>
             </div>
         </div>
     </nav>
@@ -191,8 +190,8 @@
                         送出預購訂單 Submit Order
                     </button>
                 </form>
-            </section>
-
+            </form>
+            
             <section id="searchAnchorPoint" class="hidden bg-white p-4 md:p-8 rounded-2xl shadow-xs border border-stone-100 space-y-4 mt-6 transition-all duration-500">
                 <div class="flex items-center gap-2 border-b border-stone-100 pb-3">
                     <span class="bg-[#5B7290] text-white text-xs md:text-sm font-black px-2 py-0.5 rounded">04</span>
@@ -239,19 +238,19 @@
     </div>
 
     <script>
-        // 💡 關鍵變動：點擊查詢訂單時，動態打開隱藏的區塊、滑動、高亮聚焦
+        // 智慧導覽平滑跳躍、解凍隱藏區塊與輸入框高亮聚焦
         function triggerAndScrollToSearch() {
             const anchor = document.getElementById('searchAnchorPoint');
             const inputField = document.getElementById('searchPhoneInput');
             
             if (anchor) {
-                // 1. 如果本來被隱藏，立刻移除 hidden 類別使其在 DOM 中展開
+                // 移除隱藏，顯化查單 UI 區
                 anchor.classList.remove('hidden');
                 
-                // 2. 平滑滾動到查詢區塊中央
+                // 平滑滾動到查詢區塊中央
                 anchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 
-                // 3. 延時等待滾動結束後，自動高亮與聚焦
+                // 延時等待滾動結束後，自動高亮與聚焦
                 setTimeout(() => {
                     inputField.focus();
                     anchor.classList.add('ring-4', 'ring-[#5B7290]/30', 'border-[#5B7290]');
