@@ -611,7 +611,8 @@
 
             const orderData = { 
                 action: "submitOrder", name: custName, phone: custPhone, date: shipDate, 
-                shipping_method: shipMethodVal === 'store' ? "Store Pickup" : "7-11 Pickup", 
+                    shipping_method: shipMethodVal === 'store' ? "Store Pickup" : 
+                    shipMethodVal === 'delivery' ? "7-11 Pickup" : "Unknown",
                 address: finalDatabaseAddress, product_name: orderProductSummary, quantity: totalQtyAll, 
                 packaging_name: orderPackSummary, total_price: finalTotal, 
                 note: document.getElementById('orderNote').value, coupon_code: appliedCoupon ? appliedCoupon.code : ""
