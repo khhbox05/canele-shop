@@ -231,4 +231,380 @@
         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl max-w-xs w-full text-center space-y-4 mx-4 border border-stone-100">
             <div class="space-y-1">
                 <h3 class="text-base md:text-lg font-black text-stone-800">訂單準備送出中...</h3>
-                <p class="text-
+                <p class="text-[11px] text-stone-400 uppercase tracking-wider">倒數結束前可隨時確認或調整</p>
+            </div>
+            <div class="text-5xl font-black text-[#5B7290] animate-bounce py-1" id="countdownTimer">10</div>
+            <div class="bg-stone-50 border border-stone-100 p-3.5 rounded-xl text-left space-y-2 text-xs text-stone-600 font-mono">
+                <div><span class="font-bold text-stone-400">配送方式：</span><span id="overlayMethod" class="text-stone-900 font-bold"></span></div>
+                <div><span class="font-bold text-stone-400">取貨日期：</span><span id="overlayDate" class="text-stone-900 font-bold"></span></div>
+                <div class="border-t border-stone-200 pt-1.5 mt-1.5 flex justify-between items-center text-sm">
+                    <span class="font-bold text-stone-800">應付總額：</span>
+                    <span id="overlayTotal" class="font-black text-[#5B7290]"></span>
+                </div>
+            </div>
+            <p class="text-[10px] text-stone-400 leading-relaxed">正在向雲端防搶系統排隊鎖定甜點庫存。</p>
+            
+            <div class="flex gap-2">
+                <button type="button" onclick="cancelOrderSubmission()" class="flex-1 border border-stone-200 text-stone-500 font-bold h-12 rounded-xl hover:bg-stone-50 transition-colors text-xs uppercase shadow-2xs cursor-pointer">
+                    取消調整
+                </button>
+                <button type="button" onclick="instantOrderSubmission()" class="flex-1 bg-[#5B7290] text-white font-extrabold h-12 rounded-xl hover:bg-[#3E4F66] transition-colors text-xs uppercase shadow-xs cursor-pointer">
+                    直接送出
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchMode(targetMode) {
+            const formContainer = document.getElementById('formContainer');
+            const shopWrapper = document.getElementById('shopContentWrapper');
+            const searchSection = document.getElementById('searchAnchorPoint');
+            const receiptContainer = document.getElementById('receiptContainer');
+            const shopBtn = document.getElementById('navShopBtn');
+            const searchBtn = document.getElementById('navSearchBtn');
+            const inputField = document.getElementById('searchPhoneInput');
+
+            formContainer.classList.remove('hidden');
+            receiptContainer.classList.add('hidden');
+
+            if (targetMode === 'shop') {
+                shopWrapper.classList.remove('hidden');
+                searchSection.classList.add('hidden');
+                shopBtn.className = "cursor-pointer transition-all duration-200 border-b-2 border-white pb-0.5 text-white";
+                searchBtn.className = "cursor-pointer transition-all duration-200 border-b-2 border-transparent pb-0.5 text-white/70 hover:text-white";
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (targetMode === 'search') {
+                shopWrapper.classList.add('hidden');
+                searchSection.classList.remove('hidden');
+                shopBtn.className = "cursor-pointer transition-all duration-200 border-b-2 border-transparent pb-0.5 text-white/70 hover:text-white";
+                searchBtn.className = "cursor-pointer transition-all duration-200 border-b-2 border-white pb-0.5 text-white";
+                
+                setTimeout(() => {
+                    inputField.focus();
+                    searchSection.classList.add('ring-4', 'ring-[#5B7290]/30', 'border-[#5B7290]');
+                    setTimeout(() => {
+                        searchSection.classList.remove('ring-4', 'ring-[#5B7290]/30');
+                    }, 1500);
+                }, 100);
+            }
+        }
+
+        function preventEnterSubmit(e) {
+            const keyCode = e.keyCode || e.which;
+            if (keyCode === 13 && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                return false;
+            }
+            return true;
+        }
+
+        function handleShippingMethodChange() {
+            const method = document.getElementById('shipMethod').value;
+            const addrInput = document.getElementById('custAddress');
+            const shipFeeDisplay = document.getElementById('shipFeeDisplay');
+            const dateLabel = document.getElementById('dateLabel');
+            const mapLink = document.getElementById('mapLink');
+            const addressLabel = document.getElementById('addressLabel');
+            
+            if(method === 'delivery') {
+                addressLabel.innerText = "7-11 取貨門市名稱 *";
+                mapLink.classList.remove('hidden'); 
+                addrInput.required = true;
+                addrInput.readOnly = false;
+                addrInput.value = "";
+                addrInput.placeholder = "範例：Lilou門市";
+                addrInput.className = "w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50 text-stone-800 font-normal";
+                shipFeeDisplay.querySelector('span').innerText = `+$${shippingFee}`;
+                shipFeeDisplay.classList.remove('hidden');
+                dateLabel.innerText = "希望到貨日期 *";
+            } else {
+                addressLabel.innerText = "自取門市地址";
+                mapLink.classList.add('hidden'); 
+                addrInput.required = false;
+                addrInput.readOnly = true;
+                addrInput.value = "高雄市前鎮區景德路72巷12號";
+                addrInput.className = "w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none h-12 md:h-14 bg-stone-100 font-bold text-stone-700 select-all";
+                shipFeeDisplay.classList.add('hidden');
+                dateLabel.innerText = "門市自取日期 *";
+            }
+            renderAvailableDates(method);
+            calculateTotal();
+        }
+
+        function renderAvailableDates(method) {
+            const dateSelect = document.getElementById('shipDate');
+            const textPrompt = method === 'delivery' ? '到貨日期' : '自取日期';
+            const targetDates = method === 'delivery' ? localDeliveryDates : localPickupDates;
+            
+            const now = new Date();
+            const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+            let minAllowedDate = new Date(todayMidnight.getTime());
+            
+            if (method === 'delivery') { 
+                minAllowedDate.setDate(todayMidnight.getDate() + 5); 
+            } else { 
+                minAllowedDate.setDate(todayMidnight.getDate() + 2); 
+            }
+            
+            let optionsHtml = "";
+            let hasValidDate = false;
+
+            if(targetDates && targetDates.length > 0 && targetDates[0] !== "") {
+                targetDates.forEach(dateStr => {
+                    const cleanDate = dateStr.trim();
+                    if(cleanDate !== "") {
+                        let weekdayStr = ""; 
+                        let isDateValid = true;
+                        try {
+                            const parsedDate = new Date(cleanDate);
+                            if(!isNaN(parsedDate)) {
+                                const checkDateMidnight = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate(), 0, 0, 0, 0);
+                                if (checkDateMidnight < minAllowedDate) { 
+                                    isDateValid = false; 
+                                }
+                                const weekday = ["日", "一", "二", "三", "四", "五", "六"][checkDateMidnight.getDay()];
+                                weekdayStr = ` (週${weekday})`;
+                            } else { 
+                                isDateValid = false; 
+                            }
+                        } catch(e){ 
+                            isDateValid = false; 
+                        }
+                        if (isDateValid) { 
+                            optionsHtml += `<option value="${cleanDate}">${cleanDate}${weekdayStr}</option>`; 
+                            hasValidDate = true; 
+                        }
+                    }
+                });
+            }
+
+            if (!hasValidDate) {
+                optionsHtml = `<option value="" disabled selected>-- 請選擇${textPrompt}（關閉中） --</option>` + optionsHtml;
+            } else {
+                optionsHtml = `<option value="" disabled selected>-- 請選擇${textPrompt} --</option>` + optionsHtml;
+            }
+            
+            dateSelect.innerHTML = optionsHtml;
+        }
+
+        async function fetchOptions() {
+            const CACHE_KEY = "lilou_shop_fast_cache"; const TIME_KEY = "lilou_shop_cache_time";
+            const cached = localStorage.getItem(CACHE_KEY); const cachedTime = localStorage.getItem(TIME_KEY);
+            const now = new Date().getTime();
+            if (cached) { try { renderUIWithData(JSON.parse(cached)); } catch(e) {} }
+            if (cached && cachedTime && (now - parseInt(cachedTime) < 30000)) { return; }
+            try {
+                const cacheBuster = `&_=${now}`;
+                const res = await fetch(`${API_URL}?action=getFormOptions${cacheBuster}`);
+                const data = await res.json();
+                localStorage.setItem(CACHE_KEY, JSON.stringify(data)); localStorage.setItem(TIME_KEY, now.toString());
+                renderUIWithData(data);
+            } catch (err) { console.error("同步失敗", err); }
+        }
+
+        function renderUIWithData(data) {
+            localProducts = data.products; localPackaging = data.packaging; localCoupons = data.coupons || []; 
+            if(data.settings) {
+                if(data.settings.pickup_available_dates) localPickupDates = data.settings.pickup_available_dates.toString().replace(/^"|"$/g, '').split(',');
+                if(data.settings.delivery_available_dates) localDeliveryDates = data.settings.delivery_available_dates.toString().replace(/^"|"$ /g, '').split(',');
+            }
+            const boxSelect = document.getElementById('boxSelect'); const savedVal = boxSelect.value;
+            boxSelect.innerHTML = `<option value="" disabled selected>-- 請選擇包裝樣式 --</option>` + localPackaging.map(p => `<option value="${p.name}" data-extra="${p.extra_price}">${p.name} (+$${p.extra_price})</option>`).join('');
+            if(savedVal) boxSelect.value = savedVal;
+            const packBtn = document.getElementById('packBtn');
+            packBtn.className = "w-full bg-[#5B7290] text-white font-extrabold tracking-widest h-12 rounded-xl hover:bg-[#3E4F66] transition-colors text-sm md:text-base uppercase shadow-xs cursor-pointer";
+            packBtn.innerText = "確定組合，打包放入購物車"; packBtn.disabled = false;
+            if (!savedVal) document.getElementById('currentBoxCountDisplay').innerText = "請先挑選包裝類型";
+            
+            // 💡 終極修復點 2：在網頁一載入資料完成時，立刻強制初始化配送控制，保證地圖連結一開始就被 hidden 夾死
+            handleShippingMethodChange(); 
+            renderFlavorMenu(); 
+            renderCart();
+        }
+
+        function renderFlavorMenu() {
+            const fMenu = document.getElementById('flavorMenu'); const boxSelect = document.getElementById('boxSelect');
+            const isBoxNotSelected = (boxSelect.value === ""); const bName = boxSelect.value;
+            const isBoxWithFinancier = bName.includes("費南雪"); const isBoxWithCanelé = bName.includes("大顆");
+            fMenu.innerHTML = localProducts.map((p, idx) => {
+                let occupiedInCart = 0; cart.forEach(savedBox => { const matchFlavor = savedBox.flavors.find(f => f.name === p.name); if (matchFlavor) occupiedInCart += matchFlavor.quantity; });
+                const virtualStock = p.stock - occupiedInCart; let isHidden = false;
+                if (isBoxWithFinancier) { if (!p.name.includes("費南雪")) isHidden = true; } else if (isBoxWithCanelé) { if (!p.name.includes("大顆")) isHidden = true; } else { if (p.name.includes("費南雪") || p.name.includes("大顆")) isHidden = true; }
+                if (isHidden) return ''; const shouldDisable = virtualStock <= 0 || isBoxNotSelected; let statusText = '剩 ' + (virtualStock >= 0 ? virtualStock : 0);
+                return `<div class="flex items-center justify-between py-3 gap-2"><div class="flex-1 min-w-0"><span class="font-bold text-stone-900 text-sm md:text-base break-words block">${p.name}</span><span class="text-[#5B7290] font-black text-sm md:text-base">$${p.price}</span><span class="text-[10px] md:text-xs ${virtualStock <= 0 ? 'text-red-500 font-bold' : 'text-stone-400'} ml-0.5">${statusText}</span></div><div class="shrink-0 flex items-center bg-stone-100 rounded-xl p-0.5 border border-stone-200 ${(isBoxNotSelected || shouldDisable) ? 'opacity-30 select-none' : ''}"><button type="button" onclick="stepFlavorQty(${idx}, -1)" ${shouldDisable ? 'disabled' : ''} class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center font-black text-stone-600 hover:text-stone-900 bg-white rounded-lg shadow-2xs active:bg-stone-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm md:text-base">—</button><input type="number" id="flavorQty_${idx}" data-idx="${idx}" min="0" max="${virtualStock >= 0 ? virtualStock : 0}" value="0" readonly class="flavor-input w-10 md:w-12 text-center text-sm md:text-base font-black bg-transparent border-0 focus:outline-none h-8 select-none pointer-events-none text-stone-800"><button type="button" id="plusBtn_${idx}" onclick="stepFlavorQty(${idx}, 1)" ${shouldDisable ? 'disabled' : ''} class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center font-black text-stone-600 hover:text-stone-900 bg-white rounded-lg shadow-2xs active:bg-stone-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-sm md:text-base">＋</button></div></div>`;
+            }).join('');
+        }
+
+        function stepFlavorQty(idx, change) { const input = document.getElementById(`flavorQty_${idx}`); if (!input) return; let currentVal = parseInt(input.value) || 0; let newVal = currentVal + change; const maxStock = parseInt(input.max) || 0; if (newVal < 0) newVal = 0; if (newVal > maxStock) newVal = maxStock; input.value = newVal; calculateCurrentBoxTotal(input, idx, currentVal); }
+        function handleBoxChange() { const boxSelect = document.getElementById('boxSelect'); if(boxSelect.value !== "") { const bVal = boxSelect.value; if (bVal.includes("單入") || bVal.includes("個別") || bVal.includes("免禮盒")) { currentBoxLimit = null; } else { const match = bVal.match(/\d+/); currentBoxLimit = null; currentBoxLimit = match ? parseInt(match[0]) : null; } } else { currentBoxLimit = null; } const bName = boxSelect.value; let hasViolation = false; localProducts.forEach((p, idx) => { const qtyInput = document.getElementById(`flavorQty_${idx}`); if (qtyInput && parseInt(qtyInput.value) > 0) { if (bName.includes("費南雪") && !p.name.includes("費南雪")) { hasViolation = true; } else if (bName.includes("大顆") && !p.name.includes("大顆")) { hasViolation = true; } else if (!bName.includes("費南雪") && !bName.includes("大顆") && (p.name.includes("費南雪") || p.name.includes("大顆"))) { hasViolation = true; } } }); if (hasViolation) { alert("【包裝商品不符】已為您切換商品組合選單。系統已自動重設目前輸入的甜點欄位，並為您重新隱藏不適用的口味。"); document.querySelectorAll('.flavor-input').forEach(input => input.value = "0"); } document.querySelectorAll('.flavor-input').forEach(input => { if(boxSelect.value === "") input.value = "0"; }); renderFlavorMenu(); calculateTotal(); calculateCurrentBoxTotal(null); }
+        function calculateCurrentBoxTotal(currentInputObj, changedIdx = null, previousVal = 0) { const inputs = document.querySelectorAll('.flavor-input'); let currentTotal = 0; inputs.forEach(input => { currentTotal += (parseInt(input.value) || 0); }); if (currentBoxLimit && currentTotal > currentBoxLimit) { if (currentInputObj && changedIdx !== null) { alert(`數量超標！此組合限制容量為 ${currentBoxLimit} 個。`); currentInputObj.value = previousVal; currentTotal = 0; inputs.forEach(input => { currentTotal += (parseInt(input.value) || 0); }); } } const display = document.getElementById('currentBoxCountDisplay'); if (currentBoxLimit) { display.innerText = `已選: ${currentTotal} / ${currentBoxLimit} 個`; inputs.forEach(input => { const idx = parseInt(input.getAttribute('data-idx')); const product = localProducts[idx]; if (!product) return; let occupiedInCart = 0; cart.forEach(savedBox => { const matchFlavor = savedBox.flavors.find(f => f.name === product.name); if (matchFlavor) occupiedInCart += matchFlavor.quantity; }); const virtualStock = product.stock - occupiedInCart; const selfValue = parseInt(input.value) || 0; let allowedMax = selfValue + (currentBoxLimit - currentTotal); if (allowedMax > virtualStock) allowedMax = virtualStock; input.max = allowedMax >= 0 ? allowedMax : 0; }); } else { const boxSelect = document.getElementById('boxSelect'); display.innerText = boxSelect.value === "" ? "請先挑選包裝類型" : `已選: ${currentTotal} 個`; } return currentTotal; }
+        
+        function packBoxToCart() { 
+            const boxSelect = document.getElementById('boxSelect'); 
+            if(boxSelect.value === "") { alert("請先挑選要使用的包裝類型！"); return; } 
+            const boxName = boxSelect.value; 
+            const boxExtra = parseInt(boxSelect.selectedOptions[0].getAttribute('data-extra')) || 0; 
+            const inputs = document.querySelectorAll('.flavor-input'); 
+            let boxFlavors = []; 
+            let totalFlavorsCountInBox = 0; 
+            let boxFlavorsCost = 0; 
+            let hasError = false; 
+            for (let input of inputs) { 
+                const qty = parseInt(input.value) || 0; 
+                if (qty > 0) { 
+                    const idx = parseInt(input.getAttribute('data-idx')); 
+                    const product = localProducts[idx]; 
+                    let occupiedInCart = 0; 
+                    cart.forEach(savedBox => { const matchFlavor = savedBox.flavors.find(f => f.name === product.name); if (matchFlavor) occupiedInCart += matchFlavor.quantity; }); 
+                    const virtualStock = product.stock - occupiedInCart; 
+                    if (qty > virtualStock) { alert(`庫存不足！「${product.name}」最多只能再填入 ${virtualStock >= 0 ? virtualStock : 0} 個。`); hasError = true; break; } 
+                    boxFlavors.push({ name: product.name, price: product.price, quantity: qty }); 
+                    totalFlavorsCountInBox += qty; 
+                    boxFlavorsCost += (product.price * qty); 
+                } 
+            } 
+            if (hasError) return; 
+            if(totalFlavorsCountInBox === 0) { alert("此組合內還沒有放入任何甜點喔！"); return; } 
+            if (currentBoxLimit && totalFlavorsCountInBox !== currentBoxLimit) { alert(`數量不符！「${boxName}」必須剛好裝滿 ${currentBoxLimit} 個品項。`); return; } 
+            cart.push({ boxName: boxName, boxExtra: boxExtra, flavors: boxFlavors, flavorsCost: boxFlavorsCost, totalQty: totalFlavorsCountInBox, boxTotalCost: boxFlavorsCost + boxExtra }); 
+            alert(`成功打包放入明細！`); 
+            boxSelect.value = ""; 
+            currentBoxLimit = null; 
+            renderFlavorMenu(); 
+            renderCart(); 
+        }
+
+        function removeFromCart(cartIdx) { cart.splice(cartIdx, 1); renderFlavorMenu(); renderCart(); }
+
+        function renderCart() { 
+            const container = document.getElementById('cartListContainer'); 
+            if(cart.length === 0) { 
+                container.innerHTML = `<p class="text-stone-400 text-center py-6 text-xs md:text-base">購物車目前空空的喔！</p>`; 
+                calculateTotal(); 
+                return; 
+            } 
+            container.innerHTML = cart.map((box, i) => { 
+                const flavorDetailHtml = box.flavors.map(f => `${f.name} x ${f.quantity}個`).join('、'); 
+                return `
+                <div class="border border-stone-200 rounded-xl p-3 md:p-4 flex items-center justify-between gap-3 bg-stone-50/50">
+                    <div class="flex-1 min-w-0 space-y-0.5">
+                        <div class="font-extrabold text-sm md:text-base text-stone-900 tracking-wide">組合 ${i+1}：${box.boxName}</div>
+                        <div class="text-xs md:text-sm text-[#5B7290] font-bold leading-relaxed break-words">內含：${flavorDetailHtml}</div>
+                    </div>
+                    <div class="flex items-center gap-4 shrink-0">
+                        <div class="text-right"><span class="font-black text-sm md:text-base text-stone-950">$${box.boxTotalCost}</span></div>
+                        <button type="button" onclick="removeFromCart(${i})" class="bg-stone-100 text-stone-400 p-1.5 rounded-lg w-7 h-7 md:w-8 md:h-8 flex items-center justify-center font-bold text-xs md:text-sm cursor-pointer">✕</button>
+                    </div>
+                </div>`; 
+            }).join(''); 
+            calculateTotal(); 
+        }
+
+        function calculateTotal() { let subtotal = 0; cart.forEach(box => { subtotal += box.boxTotalCost; }); document.getElementById('subtotalDisplay').innerText = `$${subtotal}`; const shipMethod = document.getElementById('shipMethod').value; let finalTotal = subtotal; if(shipMethod === 'delivery') finalTotal += shippingFee; if (appliedCoupon) { const minSpendRequirement = Number(appliedCoupon.min_spend) || 0; if (subtotal < minSpendRequirement) { appliedCoupon = null; const msgElement = document.getElementById('couponMessage'); msgElement.innerText = `✕ 組合變動，金額未達門檻 ${minSpendRequirement} 元，已自動取消折抵。`; msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-orange-500"; } } let discountAmount = 0; const couponDisplay = document.getElementById('couponDiscountDisplay'); if (appliedCoupon && subtotal > 0) { if (appliedCoupon.type === 'minus') { discountAmount = Number(appliedCoupon.value) || 0; } else if (appliedCoupon.type === 'discount') { discountAmount = Math.round(subtotal * (1 - Number(appliedCoupon.value))); } if (discountAmount > finalTotal) discountAmount = finalTotal; finalTotal -= discountAmount; couponDisplay.querySelector('span').innerText = `-$${discountAmount}`; couponDisplay.classList.remove('hidden'); } else { couponDisplay.classList.add('hidden'); } document.getElementById('totalDisplay').innerText = `$${finalTotal}`; return finalTotal; }
+        function applyCouponCode(isUserClick = false) { const inputVal = document.getElementById('couponInput').value.trim().toUpperCase(); const msgElement = document.getElementById('couponMessage'); if (inputVal === "") { appliedCoupon = null; msgElement.classList.add('hidden'); calculateTotal(); return; } let subtotal = 0; cart.forEach(box => { subtotal += box.boxTotalCost; }); const match = localCoupons.find(c => c.code === inputVal); msgElement.classList.remove('hidden'); if (match) { const minSpendRequirement = Number(match.min_spend) || 0; if (subtotal < minSpendRequirement) { appliedCoupon = null; msgElement.innerText = `✕ 未達消費門檻！此折扣碼最低消費需滿 ${minSpendRequirement} 元。`; msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-orange-500"; if(isUserClick) alert(`未達此折扣碼的低消門檻 $${minSpendRequirement} 元！`); } else { appliedCoupon = match; msgElement.innerText = `✓ 成功套用折扣碼！(${match.type === 'minus' ? '現折 ' + match.value + ' 元' : '享 ' + (match.value * 10) + ' 折'})`; msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-emerald-600"; if(isUserClick) alert("折扣碼套用成功！"); } } else { appliedCoupon = null; msgElement.innerText = "✕ 折扣碼無效或已過期。"; msgElement.className = "text-xs md:text-sm font-bold mt-1.5 text-red-500"; } calculateTotal(); }
+
+        async function handleOrderSubmit(e) {
+            e.preventDefault();
+            if(cart.length === 0) { alert("明細中還沒有任何打包好的組合！"); return; }
+            let currentSubtotal = 0; cart.forEach(box => { currentSubtotal += box.boxTotalCost; });
+            if (appliedCoupon) { const minSpendRequirement = Number(appliedCoupon.min_spend) || 0; if (currentSubtotal < minSpendRequirement) { alert(`折扣碼失效！商品總額未達低消門檻 $${minSpendRequirement} 元。`); applyCouponCode(false); return; } }
+
+            const custName = document.getElementById('custName').value.trim();
+            const custPhone = document.getElementById('custPhone').value.trim();
+            const shipMethodVal = document.getElementById('shipMethod').value;
+            const shipDate = document.getElementById('shipDate').value;
+            const custAddress = document.getElementById('custAddress').value.trim();
+            const finalTotal = calculateTotal();
+            const orderId = "ORD" + new Date().getTime();
+
+            const methodText = shipMethodVal === 'delivery' ? `7-11 店到店 (${custAddress})` : `門市自取付款 (高雄市前鎮區景德路72巷12號)`;
+            document.getElementById('overlayMethod').innerText = methodText;
+            document.getElementById('overlayDate').innerText = shipDate;
+            document.getElementById('overlayTotal').innerText = `$${finalTotal} 元`;
+
+            pendingOrderSnapshot = { orderId, custName, custPhone, shipDate, shipMethodVal, custAddress, finalTotal };
+
+            countdownSeconds = 10; 
+            document.getElementById('countdownTimer').innerText = countdownSeconds;
+            document.getElementById('countdownOverlay').classList.remove('hidden');
+
+            submissionInterval = setInterval(() => {
+                countdownSeconds--;
+                if (countdownSeconds > 0) {
+                    document.getElementById('countdownTimer').innerText = countdownSeconds;
+                } else {
+                    clearInterval(submissionInterval);
+                }
+            }, 1000);
+
+            submissionTimeout = setTimeout(async () => {
+                clearInterval(submissionInterval);
+                document.getElementById('countdownOverlay').classList.add('hidden');
+                await executeBackendPost(orderId, custName, custPhone, shipDate, shipMethodVal, custAddress, finalTotal);
+            }, 10000); 
+        }
+
+        async function instantOrderSubmission() {
+            if (!pendingOrderSnapshot) return;
+            if (submissionTimeout) clearTimeout(submissionTimeout);
+            if (submissionInterval) clearInterval(submissionInterval);
+            document.getElementById('countdownOverlay').classList.add('hidden');
+            const s = pendingOrderSnapshot;
+            await executeBackendPost(s.orderId, s.custName, s.custPhone, s.shipDate, s.shipMethodVal, s.custAddress, s.finalTotal);
+            pendingOrderSnapshot = null;
+        }
+
+        async function executeBackendPost(orderId, custName, custPhone, shipDate, shipMethodVal, custAddress, finalTotal) {
+            const orderProductSummary = cart.map((box, i) => { const flavorsStr = box.flavors.map(f => `${f.name}(${f.quantity}個)`).join('、'); return `【第${i+1}組: ${box.boxName}】${flavorsStr}`; }).join(' ｜ ');
+            const orderPackSummary = cart.map((box, i) => `[組${i+1}]${box.boxName}`).join('、');
+            const totalQtyAll = cart.reduce((sum, box) => sum + box.totalQty, 0);
+
+            const orderData = { 
+                action: "submitOrder", name: custName, phone: custPhone, date: shipDate, 
+                shipping_method: shipMethodVal === 'store' ? "Store Pickup" : "7-11 Pickup", 
+                address: custAddress, product_name: orderProductSummary, quantity: totalQtyAll, 
+                packaging_name: orderPackSummary, total_price: finalTotal, 
+                note: document.getElementById('orderNote').value, coupon_code: appliedCoupon ? appliedCoupon.code : "",
+                cart_json: JSON.stringify(cart), preset_id: orderId 
+            };
+
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(orderData) });
+                const result = await res.json();
+                if(result.status === "success") {
+                    alert("預購單送出成功！已為您保留限量數量。");
+                    document.getElementById('formContainer').classList.add('hidden');
+                    let cartDetailsHtml = cart.map((box, idx) => { const flavorsStr = box.flavors.map(f => `${f.name} x ${f.quantity}個`).join('、'); return `<div>組合 ${idx + 1} [${box.boxName}]：${flavorsStr}</div>`; }).join('');
+                    const methodText = shipMethodVal === 'delivery' ? '7-11 店到店取貨' : '門市自取付款';
+                    const dateLabelText = shipMethodVal === 'delivery' ? '希望到貨日期' : '自取日期';
+
+                    document.getElementById('receiptContent').innerHTML = `
+                        <div class="space-y-3 text-stone-700 text-sm font-mono">
+                            <div><strong>預購單編號：</strong>${orderId}</div>
+                            <div><strong>顧客姓名：</strong>${custName}</div>
+                            <div><strong>聯絡手機：</strong>${custPhone}</div>
+                            <div><strong>配送管道：</strong>${methodText}</div>
+                            <div><strong>取貨門市/自取地址：</strong>${custAddress}</div>
+                            <div><strong>${dateLabelText}：</strong>${shipDate}</div>
+                        </div>
+                        <div class="border-t border-dashed border-stone-200 my-4 pt-4 text-sm font-mono text-stone-600 space-y-1">
+                            <div class="font-bold text-stone-800 mb-1">甜點組合明細：</div>${cartDetailsHtml}
+                        </div>
+                        <div class="text-right text-lg font-black text-[#5B7290] pt-2 border-t border-stone-100">結帳總金額：$${finalTotal} 元</div>
+                        <div class="mt-6 text-xs text-stone-400 leading-relaxed bg-stone-50 p-3 rounded-lg">若後續需要修改訂單內容，請最晚於「自取前一天」私訊 Lilou 官方 LINE 或 Instagram，我們將手動為您調度。</div>
+                    `;
+                    document.getElementById('receiptContainer').classList.remove('hidden');
+                    cart = []; appliedCoupon = null; 
+                } else if (result.status === "error") { alert(result.message); }
+            } catch(err) { alert("送出訂單時發生錯誤，請稍後再試。"); }
+        }
+
+        function cancelOrderSubmission() { if (submissionTimeout) clearTimeout(submissionTimeout); if (submissionInterval) clearInterval(submissionInterval); pendingOrderSnapshot = null; document.getElementById('countdownOverlay').classList.add('hidden'); alert("已成功取消本次傳送！資料皆完整保留，您可以重新調整訂單內容。"); }
+        async function searchOrdersByPhone() { const rawPhone = document.getElementById('searchPhoneInput').value; const phone = rawPhone.toString().replace(/[^0-9]/g, '').trim(); if (!phone) { alert("請輸入正確的手機號碼！"); return; } const listContainer = document.getElementById('searchResultList'); const area = document.getElementById('searchResultArea'); listContainer.innerHTML = `<p class="text-stone-400 text-center py-4 text-xs animate-pulse">正在搜尋雲端訂單紀錄...</p>`; area.classList.remove('hidden'); try { const res = await fetch(`${API_URL}?action=queryOrders&phone=${encodeURIComponent(phone)}`); const result = await res.json(); if (result.status === "success" && result.data.length > 0) { listContainer.innerHTML = result.data.map((order, idx) => `<div class="border border-stone-200 rounded-xl bg-stone-50/50 overflow-hidden text-left"><div onclick="toggleOrderDetailDisplay(${idx})" class="p-3 md:p-4 flex justify-between items-center cursor-pointer hover:bg-stone-100/50 transition-colors"><div class="space-y-0.5"><div class="text-xs text-stone-400 font-mono">${order.date}</div><div class="font-extrabold text-sm text-stone-900 font-mono">${order.id}</div></div><div class="font-black text-sm md:text-base text-[#5B7290]">${order.total} 元 ▽</div></div><div id="orderDetailBlock_${idx}" class="hidden p-4 bg-white border-t border-stone-100 text-xs md:text-sm text-stone-600 space-y-2 font-mono whitespace-pre-line"><strong>訂購姓名：</strong>${order.name} <strong>配送管道：</strong>${order.method === "Store Pickup" ? "門市自取付款" : "7-11 店到店取貨"}${order.address ? `\n<strong>取貨門市/地址：</strong>${order.address}` : ''}\n<strong>甜點明細：</strong>\n${order.details}\n${order.note ? `<strong>備註事項：</strong>${order.note}` : ''}</div></div>`).join(''); } else { listContainer.innerHTML = `<p class="text-stone-400 text-center py-4 text-xs">查無此手機號碼的預購紀錄。</p>`; } } catch (err) { listContainer.innerHTML = `<p class="text-red-400 text-center py-4 text-xs">查詢失敗，請稍後再試。</p>`; } }
+        function toggleOrderDetailDisplay(idx) { const block = document.getElementById(`orderDetailBlock_${idx}`); block.classList.toggle('hidden'); }
+        function shareReceipt() { const receiptText = document.getElementById('receiptContent').innerText; if (navigator.share) { navigator.share({ title: 'Lilou 預購收據確認單', text: '這幕是我在 Lilou 的甜點預購單明細紀錄：\n\n' + receiptText, }).then(() => console.log('分享成功')).catch((error) => console.log('使用者取消分享', error)); } else { window.print(); } }
+        fetchOptions();
+    </script>
+</body>
+</html>
