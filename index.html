@@ -153,7 +153,7 @@
                         <div id="addressGroup" class="transition-all duration-300 space-y-1.5">
                             <div class="flex justify-between items-center">
                                 <label id="addressLabel" class="block text-xs md:text-sm font-bold text-stone-600">自取門市地址</label>
-                                <a id="mapLink" href="https://emap.pcsc.com.tw/" target="_blank" class="hidden text-xs font-bold text-emerald-600 hover:text-emerald-800 underline inline-flex items-center gap-0.5">
+                                <a id="mapLink" href="https://emap.pcsc.com.tw/" target="_blank" style="display: none;" class="text-xs font-bold text-emerald-600 hover:text-emerald-800 underline inline-flex items-center gap-0.5">
                                     開啟 7-11 門市地圖查詢
                                 </a>
                             </div>
@@ -299,7 +299,7 @@
             return true;
         }
 
-        // 💡 終極修復核心 2：在切換時建立「雙向強制防線」，切換回自取時會 100% 執行 classList.add('hidden')
+        // 💡 核心修正點：改用最高權重的 style.display 機制，徹底覆蓋 Tailwind 的樣式權重漏洞！
         function handleShippingMethodChange() {
             const method = document.getElementById('shipMethod').value;
             const addrInput = document.getElementById('custAddress');
@@ -309,9 +309,8 @@
             const addressLabel = document.getElementById('addressLabel');
             
             if(method === 'delivery') {
-                // 7-11 店到店取貨模式
                 addressLabel.innerText = "7-11 取貨門市名稱 *";
-                mapLink.classList.remove('hidden'); // 💡 只有店到店才秀地圖連結
+                mapLink.style.display = 'inline-flex'; // 💡 店到店強制改為原生顯示
                 addrInput.required = true;
                 addrInput.readOnly = false;
                 addrInput.value = "";
@@ -321,9 +320,8 @@
                 shipFeeDisplay.classList.remove('hidden');
                 dateLabel.innerText = "希望到貨日期 *";
             } else {
-                // 門市自取付款模式
                 addressLabel.innerText = "自取門市地址";
-                mapLink.classList.add('hidden'); // 💡 門市自取直接強制把 7-11 地圖連結隱藏！確保 100% 絕對不顯示
+                mapLink.style.display = 'none'; // 💡 門市自取直接用 style 機制絕對隱藏！
                 addrInput.required = false;
                 addrInput.readOnly = true;
                 addrInput.value = "高雄市前鎮區景德路72巷12號";
@@ -420,7 +418,6 @@
             packBtn.innerText = "確定組合，打包放入購物車"; packBtn.disabled = false;
             if (!savedVal) document.getElementById('currentBoxCountDisplay').innerText = "請先挑選包裝類型";
             
-            // 💡 確保一載入網頁時，就立刻執行一次雙向檢查防線，強制將地圖連結封印
             handleShippingMethodChange(); 
             renderFlavorMenu(); 
             renderCart();
@@ -568,8 +565,7 @@
                 shipping_method: shipMethodVal === 'store' ? "Store Pickup" : "7-11 Pickup", 
                 address: custAddress, product_name: orderProductSummary, quantity: totalQtyAll, 
                 packaging_name: orderPackSummary, total_price: finalTotal, 
-                note: document.getElementById('orderNote').value, coupon_code: appliedCoupon ? appliedCoupon.code : "",
-                cart_json: JSON.stringify(cart), preset_id: orderId 
+                note: document.getElementById('orderNote').value, coupon_code: appliedCoupon ? appliedCoupon.code : ""
             };
 
             try {
