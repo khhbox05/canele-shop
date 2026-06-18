@@ -54,136 +54,173 @@
         </div>
     </nav>
 
-    <main class="max-w-3xl mx-auto p-4 md:p-6 md:py-12 space-y-6 md:space-y-8">
+    <div class="max-w-3xl mx-auto p-4 md:p-6 md:py-12">
         
-        <section class="space-y-6 md:space-y-8">
-            <div class="text-center py-2 space-y-2">
-                <h2 class="text-2xl md:text-4xl font-black text-[#222222] tracking-wider">本週限量甜點預購</h2>
-                <p class="text-stone-500 text-xs md:text-base tracking-wide max-w-sm md:max-w-xl mx-auto leading-relaxed">客製化挑選您的精緻組合，每週限量供應。</p>
-            </div>
-
-            <div class="bg-white p-4 md:p-8 rounded-2xl shadow-xs border border-stone-100 space-y-5">
-                <div class="flex items-center gap-2 border-b border-stone-100 pb-3 mb-1">
-                    <span class="bg-[#5B7290] text-white text-xs md:text-sm font-black px-2 py-0.5 rounded">01</span>
-                    <h3 class="text-sm md:text-base font-black text-[#5B7290] tracking-widest uppercase">客製化您的組合</h3>
-                </div>
-                
-                <div class="space-y-2">
-                    <label class="block text-xs md:text-sm font-bold uppercase tracking-wider text-stone-600">1. 請先挑選包裝類型 *</label>
-                    <select id="boxSelect" class="w-full px-3 border border-stone-200 rounded-xl bg-stone-50 focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] text-sm md:text-base font-bold cursor-pointer h-12 md:h-14" onchange="handleBoxChange()">
-                        <option value="" disabled selected>庫存查詢中...</option>
-                    </select>
+        <main id="formContainer" class="space-y-6 md:space-y-8">
+            
+            <section class="space-y-6 md:space-y-8">
+                <div class="text-center py-2 space-y-2">
+                    <h2 class="text-2xl md:text-4xl font-black text-[#222222] tracking-wider">本週限量甜點預購</h2>
+                    <p class="text-stone-500 text-xs md:text-base tracking-wide max-w-sm md:max-w-xl mx-auto leading-relaxed">客製化挑選您的精緻組合，每週限量供應。</p>
                 </div>
 
-                <div id="flavorSection" class="space-y-4 pt-3 border-t border-stone-100">
-                    <div class="flex justify-between items-center">
-                        <label class="block text-xs md:text-sm font-bold uppercase tracking-wider text-stone-600">2. 請挑選組合內口味與數量：</label>
-                        <span id="currentBoxCountDisplay" class="text-xs md:text-sm font-black text-stone-700 bg-stone-100 px-2 py-1 rounded-md">請先挑選包裝類型</span>
+                <div class="bg-white p-4 md:p-8 rounded-2xl shadow-xs border border-stone-100 space-y-5">
+                    <div class="flex items-center gap-2 border-b border-stone-100 pb-3 mb-1">
+                        <span class="bg-[#5B7290] text-white text-xs md:text-sm font-black px-2 py-0.5 rounded">01</span>
+                        <h3 class="text-sm md:text-base font-black text-[#5B7290] tracking-widest uppercase">客製化您的組合</h3>
                     </div>
                     
-                    <div id="flavorMenu" class="space-y-1 divide-y divide-stone-100">
-                        <div class="animate-pulse flex items-center justify-between py-3.5">
-                            <div class="h-4 bg-stone-200 rounded-md w-1/3"></div>
-                            <div class="flex items-center gap-3"><div class="h-8 bg-stone-200 rounded-lg w-28"></div></div>
-                        </div>
-                    </div>
-                    
-                    <div class="pt-2">
-                        <button type="button" onclick="packBoxToCart()" class="w-full bg-stone-300 text-white font-extrabold tracking-widest h-12 rounded-xl text-sm md:text-base uppercase shadow-xs cursor-not-allowed transition-all duration-200" id="packBtn" disabled>
-                            正在同步最新庫存中...
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <form id="orderForm" class="bg-white p-4 md:p-8 rounded-2xl shadow-xs border border-stone-100 space-y-6 md:space-y-8" onsubmit="handleOrderSubmit(event)" onkeypress="return preventEnterSubmit(event)">
-                
-                <div class="space-y-4">
-                    <div class="flex items-center gap-2 border-b border-stone-100 pb-3">
-                        <span class="bg-[#5B7290] text-white text-xs md:text-sm font-black px-2 py-0.5 rounded">02</span>
-                        <h3 class="text-sm md:text-base font-black text-[#5B7290] tracking-widest uppercase">確認已打包的組合明細</h3>
-                    </div>
-                    <div id="cartListContainer" class="space-y-2.5">
-                        <p class="text-stone-400 text-center py-6 text-xs md:text-base">購物車目前空空的喔！</p>
-                    </div>
-                </div>
-
-                <div class="space-y-4 md:space-y-6 pt-2">
-                    <div class="flex items-center gap-2 border-b border-stone-100 pb-3">
-                        <span class="bg-[#5B7290] text-white text-xs md:text-sm font-black px-2 py-0.5 rounded">03</span>
-                        <h3 class="text-sm md:text-base font-black text-[#5B7290] tracking-wider uppercase">填寫訂購資訊</h3>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                        <div>
-                            <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">訂購人姓名 *</label>
-                            <input type="text" id="custName" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50" placeholder="請輸入姓名" required>
-                        </div>
-                        <div>
-                            <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">聯絡電話 *</label>
-                            <input type="tel" id="custPhone" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50" placeholder="請輸入手機號碼" required>
-                        </div>
+                    <div class="space-y-2">
+                        <label class="block text-xs md:text-sm font-bold uppercase tracking-wider text-stone-600">1. 請先挑選包裝類型 *</label>
+                        <select id="boxSelect" class="w-full px-3 border border-stone-200 rounded-xl bg-stone-50 focus:outline-none focus:border-[#5B7290] focus:ring-1 focus:ring-[#5B7290] text-sm md:text-base font-bold cursor-pointer h-12 md:h-14" onchange="handleBoxChange()">
+                            <option value="" disabled selected>庫存查詢中...</option>
+                        </select>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                        <div>
-                            <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">配送方式 *</label>
-                            <select id="shipMethod" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] cursor-pointer h-12 md:h-14 bg-stone-50/50" onchange="handleShippingMethodChange()" required>
-                                <option value="store">門市自取付款</option>
-                                <option value="delivery">7-11 店到店取貨 (冷凍運費另計)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label id="dateLabel" class="block text-xs md:text-sm font-bold text-[#5B7290] mb-1.5">門市自取日期 *</label>
-                            <select id="shipDate" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] bg-white font-bold text-stone-800 cursor-pointer h-12 md:h-14" required>
-                                <option value="" disabled selected>正在載入可用日期...</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div id="addressGroup" class="hidden transition-all duration-300 space-y-1.5">
+                    <div id="flavorSection" class="space-y-4 pt-3 border-t border-stone-100">
                         <div class="flex justify-between items-center">
-                            <label id="addressLabel" class="block text-xs md:text-sm font-bold text-stone-600">7-11 取貨門市名稱 *</label>
-                            <a href="https://emap.pcsc.com.tw/" target="_blank" class="text-xs font-bold text-emerald-600 hover:text-emerald-800 underline inline-flex items-center gap-0.5">
-                                開啟 7-11 門市地圖查詢
-                            </a>
+                            <label class="block text-xs md:text-sm font-bold uppercase tracking-wider text-stone-600">2. 請挑選組合內口味與數量：</label>
+                            <span id="currentBoxCountDisplay" class="text-xs md:text-sm font-black text-stone-700 bg-stone-100 px-2 py-1 rounded-md">請先挑選包裝類型</span>
                         </div>
-                        <input type="text" id="custAddress" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50" placeholder="範例：Lilou門市">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">折扣碼 (選填)</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="couponInput" class="flex-1 px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50 uppercase" placeholder="請輸入折扣碼">
-                            <button type="button" onclick="applyCouponCode(true)" class="bg-[#5B7290] text-white font-bold px-4 md:px-6 rounded-xl hover:bg-[#3E4F66] transition-all text-sm md:text-base shrink-0 cursor-pointer h-12 md:h-14">
-                                套用
+                        
+                        <div id="flavorMenu" class="space-y-1 divide-y divide-stone-100">
+                            <div class="animate-pulse flex items-center justify-between py-3.5">
+                                <div class="h-4 bg-stone-200 rounded-md w-1/3"></div>
+                                <div class="flex items-center gap-3"><div class="h-8 bg-stone-200 rounded-lg w-28"></div></div>
+                            </div>
+                        </div>
+                        
+                        <div class="pt-2">
+                            <button type="button" onclick="packBoxToCart()" class="w-full bg-stone-300 text-white font-extrabold tracking-widest h-12 rounded-xl text-sm md:text-base uppercase shadow-xs cursor-not-allowed transition-all duration-200" id="packBtn" disabled>
+                                正在同步最新庫存中...
                             </button>
                         </div>
-                        <p id="couponMessage" class="text-xs md:text-sm font-bold mt-1.5 hidden"></p>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">備註說明</label>
-                        <textarea id="orderNote" rows="2" class="w-full p-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] bg-stone-50/50" placeholder="若有特殊需求請在此註記"></textarea>
                     </div>
                 </div>
 
-                <div class="bg-stone-50 p-4 md:p-6 rounded-xl space-y-1.5 text-right text-stone-500 text-xs md:text-sm tracking-wide border border-stone-100">
-                    <div>商品總計 Subtotal: <span id="subtotalDisplay" class="font-bold text-stone-700 md:text-base">$0</span></div>
-                    <div id="shipFeeDisplay" class="hidden">7-11 冷凍運費 Shipping: <span class="font-bold text-stone-700 md:text-base">+$129</span></div>
-                    <div id="couponDiscountDisplay" class="hidden text-red-500 font-bold">折扣折抵 Discount: <span class="md:text-base">-$0</span></div>
+                <form id="orderForm" class="bg-white p-4 md:p-8 rounded-2xl shadow-xs border border-stone-100 space-y-6 md:space-y-8" onsubmit="handleOrderSubmit(event)" onkeypress="return preventEnterSubmit(event)">
                     
-                    <div class="text-[#222222] font-black text-xl md:text-2xl pt-2.5 border-t border-stone-200 mt-2">
-                        總金額 Total：<span id="totalDisplay" class="text-xl md:text-2xl font-black text-[#5B7290]">$0</span>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-2 border-b border-stone-100 pb-3">
+                            <span class="bg-[#5B7290] text-white text-xs md:text-sm font-black px-2 py-0.5 rounded">02</span>
+                            <h3 class="text-sm md:text-base font-black text-[#5B7290] tracking-widest uppercase">確認已打包的組合明細</h3>
+                        </div>
+                        <div id="cartListContainer" class="space-y-2.5">
+                            <p class="text-stone-400 text-center py-6 text-xs md:text-base">購物車目前空空的喔！</p>
+                        </div>
                     </div>
-                </div>
 
-                <button type="submit" class="w-full bg-[#3E2D20] text-white font-extrabold tracking-widest h-14 md:h-16 rounded-xl hover:bg-[#2B1F16] shadow-sm cursor-pointer text-base md:text-lg uppercase transition-colors duration-150">
-                    送出預購訂單 Submit Order
-                </button>
+                    <div class="space-y-4 md:space-y-6 pt-2">
+                        <div class="flex items-center gap-2 border-b border-stone-100 pb-3">
+                            <span class="bg-[#5B7290] text-white text-xs md:text-sm font-black px-2 py-0.5 rounded">03</span>
+                            <h3 class="text-sm md:text-base font-black text-[#5B7290] tracking-wider uppercase">填寫訂購資訊</h3>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                            <div>
+                                <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">訂購人姓名 *</label>
+                                <input type="text" id="custName" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50" placeholder="請輸入姓名" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">聯絡電話 *</label>
+                                <input type="tel" id="custPhone" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50" placeholder="請輸入手機號碼" required>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                            <div>
+                                <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">配送方式 *</label>
+                                <select id="shipMethod" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] cursor-pointer h-12 md:h-14 bg-stone-50/50" onchange="handleShippingMethodChange()" required>
+                                    <option value="store">門市自取付款</option>
+                                    <option value="delivery">7-11 店到店取貨 (冷凍運費另計)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label id="dateLabel" class="block text-xs md:text-sm font-bold text-[#5B7290] mb-1.5">門市自取日期 *</label>
+                                <select id="shipDate" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] bg-white font-bold text-stone-800 cursor-pointer h-12 md:h-14" required>
+                                    <option value="" disabled selected>正在載入可用日期...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="addressGroup" class="hidden transition-all duration-300 space-y-1.5">
+                            <div class="flex justify-between items-center">
+                                <label id="addressLabel" class="block text-xs md:text-sm font-bold text-stone-600">7-11 取貨門市名稱 *</label>
+                                <a href="https://emap.pcsc.com.tw/" target="_blank" class="text-xs font-bold text-emerald-600 hover:text-emerald-800 underline inline-flex items-center gap-0.5">
+                                    開啟 7-11 門市地圖查詢
+                                </a>
+                            </div>
+                            <input type="text" id="custAddress" class="w-full px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50" placeholder="範例：Lilou門市">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">折扣碼 (選填)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="couponInput" class="flex-1 px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 md:h-14 bg-stone-50/50 uppercase" placeholder="請輸入折扣碼">
+                                <button type="button" onclick="applyCouponCode(true)" class="bg-[#5B7290] text-white font-bold px-4 md:px-6 rounded-xl hover:bg-[#3E4F66] transition-all text-sm md:text-base shrink-0 cursor-pointer h-12 md:h-14">
+                                    套用
+                                </button>
+                            </div>
+                            <p id="couponMessage" class="text-xs md:text-sm font-bold mt-1.5 hidden"></p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs md:text-sm font-bold text-stone-600 mb-1.5">備註說明</label>
+                            <textarea id="orderNote" rows="2" class="w-full p-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] bg-stone-50/50" placeholder="若有特殊需求請在此註記"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="bg-stone-50 p-4 md:p-6 rounded-xl space-y-1.5 text-right text-stone-500 text-xs md:text-sm tracking-wide border border-stone-100">
+                        <div>商品總計 Subtotal: <span id="subtotalDisplay" class="font-bold text-stone-700 md:text-base">$0</span></div>
+                        <div id="shipFeeDisplay" class="hidden">7-11 冷凍運費 Shipping: <span class="font-bold text-stone-700 md:text-base">+$129</span></div>
+                        <div id="couponDiscountDisplay" class="hidden text-red-500 font-bold">折扣折抵 Discount: <span class="md:text-base">-$0</span></div>
+                        
+                        <div class="text-[#222222] font-black text-xl md:text-2xl pt-2.5 border-t border-stone-200 mt-2">
+                            總金額 Total：<span id="totalDisplay" class="text-xl md:text-2xl font-black text-[#5B7290]">$0</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-[#3E2D20] text-white font-extrabold tracking-widest h-14 md:h-16 rounded-xl hover:bg-[#2B1F16] shadow-sm cursor-pointer text-base md:text-lg uppercase transition-colors duration-150">
+                        送出預購訂單 Submit Order
+                    </button>
+                </form>
             </form>
+            
+            <section class="bg-white p-4 md:p-8 rounded-2xl shadow-xs border border-stone-100 space-y-4 mt-6">
+                <div class="flex items-center gap-2 border-b border-stone-100 pb-3">
+                    <span class="bg-[#5B7290] text-white text-xs md:text-sm font-black px-2 py-0.5 rounded">04</span>
+                    <h3 class="text-sm md:text-base font-black text-[#5B7290] tracking-wider uppercase">快速查詢預購單</h3>
+                </div>
+                <div class="flex gap-2">
+                    <input type="tel" id="searchPhoneInput" class="flex-1 px-3 border border-stone-200 rounded-xl text-sm md:text-base focus:outline-none focus:border-[#5B7290] h-12 bg-stone-50/50" placeholder="請輸入訂購時的手機號碼">
+                    <button type="button" onclick="searchOrdersByPhone()" class="bg-[#5B7290] text-white font-bold px-6 rounded-xl hover:bg-[#3E4F66] transition-all text-sm md:text-base shrink-0 cursor-pointer h-12">
+                        查詢
+                    </button>
+                </div>
+                <div id="searchResultArea" class="space-y-2.5 pt-2 hidden">
+                    <p class="text-xs font-bold text-stone-500 uppercase tracking-wider">您的歷史預購紀錄 (點擊可展開明細)：</p>
+                    <div id="searchResultList" class="space-y-2"></div>
+                </div>
+            </section>
+        </main>
+
+        <section id="receiptContainer" class="hidden bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-stone-100 space-y-6">
+            <div class="text-center border-b border-stone-100 pb-4">
+                <h2 class="text-xl md:text-2xl font-black text-stone-800 tracking-wider">LILOU 預購收據確認單</h2>
+            </div>
+            
+            <div id="receiptContent"></div>
+            
+            <div class="space-y-3 pt-4 border-t border-stone-100">
+                <button type="button" onclick="shareReceipt()" class="w-full bg-[#5B7290] text-white font-black h-12 md:h-14 rounded-xl hover:bg-[#3E4F66] transition-colors shadow-xs cursor-pointer text-sm md:text-base uppercase tracking-wider">
+                    分享或儲存預購明細
+                </button>
+                <button type="button" onclick="window.location.reload()" class="w-full border border-stone-200 text-stone-600 font-bold h-12 md:h-14 rounded-xl hover:bg-stone-50 transition-colors cursor-pointer text-sm tracking-wider">
+                    返回商店首頁
+                </button>
+            </div>
         </section>
-    </main>
+    </div>
 
     <div id="countdownOverlay" class="fixed inset-0 bg-stone-950/60 backdrop-blur-xs flex items-center justify-center z-50 hidden">
         <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl max-w-xs w-full text-center space-y-4 mx-4 border border-stone-100">
@@ -613,7 +650,7 @@
             return finalTotal;
         }
 
-        // 💡 核心優化：整合 5 秒倒數計時與可隨時取消機制的下單流程（已移除所有繪文字）
+        // 💡 核心優化：整合 5 秒倒數計時與可隨時取消機制的下單流程（已移除所有emoji）
         async function handleOrderSubmit(e) {
             e.preventDefault();
             if(cart.length === 0) { alert("明細中還沒有任何打包好的組合！"); return; }
@@ -644,7 +681,7 @@
             let cartDetailsText = "";
             cart.forEach((box, index) => {
                 const flavorsList = box.flavors.map(f => `      - ${f.name} x ${f.quantity}個`).join('\n');
-                cartDetailsText += `   組合 ${index + 1}：${box.boxName}\n${flavorsList}\n`;
+                cartDetailsText += `    組合 ${index + 1}：${box.boxName}\n${flavorsList}\n`;
             });
 
             // 建立明細核對彈窗字串（純文字排版，無繪文字）
@@ -728,12 +765,46 @@
                 
                 if(result.status === "success") {
                     alert("預購單送出成功！已為您保留限量數量。");
+                    
+                    // 💡 優化：隱藏原本的填單區，渲染獨立的極簡收據確認頁，把重要提醒移至第一行
+                    document.getElementById('formContainer').classList.add('hidden');
+                    
+                    let cartDetailsHtml = cart.map((box, idx) => {
+                        const flavorsStr = box.flavors.map(f => `${f.name} x ${f.quantity}個`).join('、');
+                        return `<div>組合 ${idx + 1} [${box.boxName}]：${flavorsStr}</div>`;
+                    }).join('');
+
+                    const methodText = shipMethodVal === 'delivery' ? '7-11 店到店取貨' : '門市自取付款';
+                    const dateLabelText = shipMethodVal === 'delivery' ? '希望到貨日期' : '自取日期';
+
+                    document.getElementById('receiptContent').innerHTML = `
+                        <div class="bg-amber-50 border border-amber-100 p-4 rounded-xl text-sm text-amber-800 font-bold mb-6">
+                            重要提醒：請對本畫面進行截圖保留，以便後續核對訂單資訊。
+                        </div>
+                        <div class="space-y-3 text-stone-700 text-sm font-mono">
+                            <div><strong>預購單編號：</strong>${orderId}</div>
+                            <div><strong>顧客姓名：</strong>${custName}</div>
+                            <div><strong>聯絡手機：</strong>${custPhone}</div>
+                            <div><strong>配送管道：</strong>${methodText}</div>
+                            ${shipMethodVal === 'delivery' ? `<div><strong>取貨門市：</strong>${custAddress}</div>` : ''}
+                            <div><strong>${dateLabelText}：</strong>${shipDate}</div>
+                        </div>
+                        <div class="border-t border-dashed border-stone-200 my-4 pt-4 text-sm font-mono text-stone-600 space-y-1">
+                            <div class="font-bold text-stone-800 mb-1">甜點組合明細：</div>
+                            ${cartDetailsHtml}
+                        </div>
+                        <div class="text-right text-lg font-black text-[#5B7290] pt-2 border-t border-stone-100">
+                            結帳總金額：$${finalTotal} 元
+                        </div>
+                        <div class="mt-6 text-xs text-stone-400 leading-relaxed bg-stone-50 p-3 rounded-lg">
+                            若後續需要修改訂單內容，請最晚於「自取前一天」私訊 Lilou 官方 LINE 或 Instagram，我們將手動為您調度。
+                        </div>
+                    `;
+                    
+                    document.getElementById('receiptContainer').classList.remove('hidden');
+                    
+                    // 清空本地快取購物車
                     cart = []; appliedCoupon = null; 
-                    document.getElementById('orderForm').reset();
-                    document.getElementById('couponMessage').classList.add('hidden');
-                    document.getElementById('boxSelect').value = "";
-                    currentBoxLimit = null;
-                    fetchOptions(); 
                 } else if (result.status === "error") {
                     alert(result.message);
                 }
@@ -746,6 +817,68 @@
             if (submissionInterval) clearInterval(submissionInterval);
             document.getElementById('countdownOverlay').classList.add('hidden');
             alert("已成功取消本次傳送！資料皆完整保留，您可以重新調整訂單內容。");
+        }
+
+        // 📱 手機號碼向後台試算表即時查單函數 (兩階段折疊列表)
+        async function searchOrdersByPhone() {
+            const phone = document.getElementById('searchPhoneInput').value.trim();
+            if (!phone) { alert("請輸入手機號碼！"); return; }
+            
+            const listContainer = document.getElementById('searchResultList');
+            const area = document.getElementById('searchResultArea');
+            
+            listContainer.innerHTML = `<p class="text-stone-400 text-center py-4 text-xs animate-pulse">正在搜尋雲端訂單紀錄...</p>`;
+            area.classList.remove('hidden');
+            
+            try {
+                const res = await fetch(`${API_URL}?action=queryOrders&phone=${phone}`);
+                const result = await res.json();
+                
+                if (result.status === "success" && result.data.length > 0) {
+                    listContainer.innerHTML = result.data.map((order, idx) => `
+                        <div class="border border-stone-200 rounded-xl bg-stone-50/50 overflow-hidden text-left">
+                            <div onclick="toggleOrderDetailDisplay(${idx})" class="p-3 md:p-4 flex justify-between items-center cursor-pointer hover:bg-stone-100/50 transition-colors">
+                                <div class="space-y-0.5">
+                                    <div class="text-xs text-stone-400 font-mono">${order.date}</div>
+                                    <div class="font-extrabold text-sm text-stone-900 font-mono">${order.id}</div>
+                                </div>
+                                <div class="font-black text-sm md:text-base text-[#5B7290]">${order.total} 元 ▽</div>
+                            </div>
+                            <div id="orderDetailBlock_${idx}" class="hidden p-4 bg-white border-t border-stone-100 text-xs md:text-sm text-stone-600 space-y-2 font-mono whitespace-pre-line">
+                                <strong>訂購姓名：</strong>${order.name}
+                                <strong>配送管道：</strong>${order.method === "Store Pickup" ? "門市自取付款" : "7-11 店到店取貨"}
+                                ${order.address ? `<strong>取貨門市：</strong>${order.address}\n` : ''}<strong>甜點明細：</strong>\n${order.details}
+                                ${order.note ? `<strong>備註事項：</strong>${order.note}` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    listContainer.innerHTML = `<p class="text-stone-400 text-center py-4 text-xs">查無此手機號碼的預購紀錄。</p>`;
+                }
+            } catch (err) {
+                listContainer.innerHTML = `<p class="text-red-400 text-center py-4 text-xs">查詢失敗，請稍後再試。</p>`;
+            }
+        }
+
+        // 控制折疊詳細內容的展收
+        function toggleOrderDetailDisplay(idx) {
+            const block = document.getElementById(`orderDetailBlock_${idx}`);
+            block.classList.toggle('hidden');
+        }
+
+        // 🔗 呼叫智慧型手機原生 Share API 功能
+        function shareReceipt() {
+            const receiptText = document.getElementById('receiptContent').innerText;
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Lilou 預購收據確認單',
+                    text: '這是我在 Lilou 的甜點預購單明細紀錄：\n\n' + receiptText,
+                }).then(() => console.log('分享成功'))
+                  .catch((error) => console.log('使用者取消分享', error));
+            } else {
+                // 桌機或不支援時，啟動系統列印對話框（可直接另存為 PDF）
+                window.print();
+            }
         }
 
         fetchOptions();
