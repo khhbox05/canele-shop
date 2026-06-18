@@ -543,7 +543,7 @@
                 clearInterval(submissionInterval);
                 switchToLoadingState();
                 await executeBackendPost(orderId, custName, custPhone, shipDate, shipMethodVal, custAddress, finalTotal);
-            }, 20000); 
+            }, 20000); // ✨ 這裡已正確修改為 20000 毫秒（20秒）
         }
 
         function switchToLoadingState() {
